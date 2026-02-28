@@ -106,7 +106,7 @@ async fn create_and_connect(user_info: UserInfo) -> Result<(), Box<dyn Error>> {
     swarm.behaviour_mut().gossipsub.subscribe(&topic)?;
 
     // listen on all interfaces and OS-assigned port
-    swarm.listen_on("/ip4/0.0.0.0/udp/0/quic-v1".parse()?)?;
+    // swarm.listen_on("/ip4/0.0.0.0/udp/0/quic-v1".parse()?)?;
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
 
     println!("Enter messages via STDIN to send to connected peers using gossipsub");
@@ -115,49 +115,49 @@ async fn create_and_connect(user_info: UserInfo) -> Result<(), Box<dyn Error>> {
 
     loop {
         select! {
-                    Ok(Some(line)) = stdin.next_line() => {
-                        let message = Message { sender_name: user_info.name.clone(), message: line };
-                        let buf = rmp_serde::to_vec(&message);
+        Ok(Some(line)) = stdin.next_line() => {
+            let message = Message { sender_name: user_info.name.clone(), message: line };
+            let buf = rmp_serde::to_vec(&message);
 
-                        match &buf {
-                            Err(e) => println!("Serializer error: {e:?}"),
-                            _ => {}
-                        }
+            match &buf {
+                Err(e) => println!("Serializer error: {e:?}"),
+                _ => {}
+            }
 
-                        if let Err(e) = swarm
-                            .behaviour_mut().gossipsub
-                                .publish(topic.clone(), buf.unwrap()) {
-                                    println!("Publish error: {e:?}");
-                        }
-                    }
-                    event = swarm.select_next_some() => match event {
-                        SwarmEvent::Behaviour(CustomBehaviourEvent::Mdns(mdns::Event::Discovered(list))) => {
-                            for (peer_id, _multiaddr) in list {
-                                println!("mDNS discovered a new peer: {peer_id}");
-                                swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer_id);
-                            }
-                        },
-                        SwarmEvent::Behaviour(CustomBehaviourEvent::Mdns(mdns::Event::Expired(list))) => {
-                            for (peer_id, _multiaddr) in list {
-                                println!("mDNS discover peer has expired: {peer_id}");
-                                swarm.behaviour_mut().gossipsub.remove_explicit_peer(&peer_id);
-                            }
-                        },
-                        SwarmEvent::Behaviour(CustomBehaviourEvent::Gossipsub(gossipsub::Event::Message {
-                            propagation_source: _peer_id,
-                            message_id: _id,
-                            message,
-                        })) => {
-                            let message_struct: Message = rmp_serde::from_slice(&message.data)?;
-
-
-                            println!("{}: {}", message_struct.sender_name, message_struct.message);
-                        },
-                    SwarmEvent::NewListenAddr { address, .. } => {
-                        println!("Local node is listening on {address}");
-                        }
-        _ => {}
-                    }
+            if let Err(e) = swarm
+                .behaviour_mut().gossipsub
+                    .publish(topic.clone(), buf.unwrap()) {
+                        println!("Publish error: {e:?}");
+            }
+        }
+        event = swarm.select_next_some() => match event {
+            SwarmEvent::Behaviour(CustomBehaviourEvent::Mdns(mdns::Event::Discovered(list))) => {
+                for (peer_id, _multiaddr) in list {
+                    println!("mDNS discovered a new peer: {peer_id}");
+                    swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer_id);
                 }
+            },
+            SwarmEvent::Behaviour(CustomBehaviourEvent::Mdns(mdns::Event::Expired(list))) => {
+                for (peer_id, _multiaddr) in list {
+                    println!("mDNS discover peer has expired: {peer_id}");
+                    swarm.behaviour_mut().gossipsub.remove_explicit_peer(&peer_id);
+                }
+            },
+            SwarmEvent::Behaviour(CustomBehaviourEvent::Gossipsub(gossipsub::Event::Message {
+                propagation_source: _peer_id,
+                message_id: _id,
+                message,
+            })) => {
+                let message_struct: Message = rmp_serde::from_slice(&message.data)?;
+
+
+                println!("{}: {}", message_struct.sender_name, message_struct.message);
+            },
+        SwarmEvent::NewListenAddr { address, .. } => {
+            println!("Local node is listening on {address}");
+            }
+            _ => {}
+        }
+            }
     }
 }
