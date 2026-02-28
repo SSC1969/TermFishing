@@ -1,9 +1,13 @@
+mod app;
 mod chat;
 mod dex;
 mod inventory;
 mod player;
-mod ui;
 
-fn main() {
-    todo!();
+#[tokio::main]
+async fn main() -> color_eyre::Result<()> {
+    app::errors::init()?;
+    app::logging::init()?;
+
+    Ok(())
 }
