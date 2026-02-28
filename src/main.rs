@@ -153,11 +153,11 @@ async fn create_and_connect(user_info: UserInfo) -> Result<(), Box<dyn Error>> {
 
                 println!("{}: {}", message_struct.sender_name, message_struct.message);
             },
-        SwarmEvent::NewListenAddr { address, .. } => {
-            println!("Local node is listening on {address}");
+            SwarmEvent::NewListenAddr { address, .. } => {
+                println!("Local node is listening on {address}");
+                }
+                _ => {}
             }
-            _ => {}
         }
-            }
     }
 }
