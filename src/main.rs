@@ -1,6 +1,7 @@
 pub mod app;
 pub mod chat;
 pub mod event;
+pub mod inventory;
 pub mod items;
 pub mod player;
 pub mod ui;
