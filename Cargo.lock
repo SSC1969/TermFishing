@@ -549,6 +549,7 @@ dependencies = [
  "crossterm_winapi",
  "derive_more",
  "document-features",
+ "futures-core",
  "mio",
  "parking_lot",
  "rustix",
@@ -3071,12 +3072,15 @@ name = "rust_networking"
 version = "0.1.0"
 dependencies = [
  "color-eyre",
+ "crossterm",
  "futures",
  "libp2p",
  "ratatui",
  "rmp-serde",
  "serde",
  "tokio",
+ "tokio-util",
+ "tracing",
  "tracing-subscriber",
 ]
 

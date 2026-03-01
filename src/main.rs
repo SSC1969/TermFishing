@@ -1,13 +1,18 @@
-mod app;
-mod chat;
-mod dex;
-mod inventory;
-mod player;
+pub mod app;
+pub mod chat;
+pub mod dex;
+pub mod event;
+pub mod inventory;
+pub mod player;
+pub mod ui;
+
+use crate::app::App;
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
-    app::errors::init()?;
-    app::logging::init()?;
-
-    Ok(())
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let result = App::new().run(terminal).await;
+    ratatui::restore();
+    result
 }
