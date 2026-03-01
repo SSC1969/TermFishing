@@ -1,8 +1,8 @@
 use crate::inventory::Inventory;
 use crate::inventory::{backpack::Backpack, dex::Dex};
-use crate::items::fish::generate_fish;
+use crate::items::fish::Fish;
 
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct Player {
     pub backpack: Backpack,
     pub dex: Dex,
@@ -10,9 +10,9 @@ pub struct Player {
 
 impl Player {
     pub fn catch_fish(&mut self) {
-        let fish = generate_fish();
-        self.backpack.add_item(fish.clone());
-        self.dex.add_item(fish);
+        let fish = Fish::generate();
+        self.backpack.add_item(Box::new(fish.clone()));
+        self.dex.add_item(Box::new(fish));
     }
 }
 

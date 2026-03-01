@@ -39,7 +39,6 @@ impl Menu {
 }
 
 /// Application.
-#[derive(Debug)]
 pub struct App {
     pub tx: Sender<String>,
     /// Is the application running?
