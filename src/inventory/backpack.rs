@@ -7,8 +7,8 @@ pub struct Backpack {
     pub items: HashMap<String, HashSet<Item>>,
 }
 
-impl Inventory for Backpack {
-    fn search(&self, name: String) -> Vec<&Item> {
+impl Backpack {
+    pub fn search(&self, name: String) -> Vec<&Item> {
         let found = self.items.get(&name);
         return match found {
             Some(i) => i.iter().collect(),
@@ -16,6 +16,12 @@ impl Inventory for Backpack {
         };
     }
 
+    pub fn get_all(&self) -> Vec<&Item> {
+        return self.items.values().flatten().collect();
+    }
+}
+
+impl Inventory for Backpack {
     fn add_item(&mut self, i: Item) {
         self.items.entry(i.base.name.clone()).or_default().insert(i);
     }

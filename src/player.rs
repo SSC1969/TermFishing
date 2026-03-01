@@ -1,10 +1,6 @@
-use rand::{Rng, RngExt};
-use std::array;
-
 use crate::inventory::Inventory;
 use crate::inventory::{backpack::Backpack, dex::Dex};
-use crate::items::fish::{self, Fish, generate_fish};
-use crate::items::{self, Item, ItemBase, ItemKind};
+use crate::items::fish::generate_fish;
 
 #[derive(Default, Debug)]
 pub struct Player {
@@ -22,14 +18,12 @@ impl Player {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use super::*;
 
     #[test]
     fn test_catch_fish() {
         let mut p = Player::default();
         p.catch_fish();
-        assert!(p.backpack.search("Halibut".to_string()).len() == 1)
+        assert!(p.backpack.get_all().len() == 1)
     }
 }
