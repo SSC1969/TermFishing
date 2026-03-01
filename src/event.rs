@@ -43,7 +43,10 @@ pub enum AppEvent {
     /// Change menus
     ChangeMenu(Menu),
     /// Debug in a fish
-    DebugFish,
+    FishBiting,
+
+    FishCatching,
+    FishCaught,
 
     ChangeInputMode(InputMode),
 

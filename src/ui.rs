@@ -1,3 +1,45 @@
+static DEFAULT_FRAME: &str = r#"
+
+　　　　　　　　　　　　　　　　　　　 ,
+　　　　　　　　　　　　　　 　 　　,／ヽ
+　　　　　　　　　　　　　 　 　 ,／　　　ヽ
+　　　　 　　　　　  ∧＿∧　　 ,／　　　　　　ヽ
+　　　　　 　　　　（ ´w｀）,／　 　　　　　　 ヽ
+　　　　　　　 　　（　　つつ@　 　　　　 　　　　ヽ
+　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　　　  ヽ
+　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　　ヽ
+￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　   　o
+／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ ~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
+"#;
+
+static BITE_FRAME: &str = r#"
+
+　　　　　　　　　　　　　　　　　　　 ,
+　　　　　　　　　　　　　　 　 　　 ,／ヽ
+　　　　　　　　　　　　　 　 　  ,／　　\
+　　　　 　　　　　  ∧＿∧　　 ,／　　　　ヽ        got a bite!
+　　　　　 　　　　（ `o｀）,／　 　　　　ヽ
+　　　　　　　 　　（　　つつ@　 　　　　 　ヽ
+　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　ヽ
+　　　　　　|――|　（_＿）＿）　　　　 　　 　　ヽ
+￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　` \' 　
+／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ `~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
+"#;
+
+static CATCH_FRAME: &str = r#"
+
+　　　　　　　　　　　　　　　　　　 /,
+　　　　　　　　　　　　　　 　 　,/  \
+　　　　　　　　　　　　　 　 　,/　  ヽ     
+　　　　 　　　　　  ∧＿∧　　,／　　　　ヽ,     _    woah!
+　　　　　 　　　　（ ´∀｀）,／　 　　　　　\_/   ヽ
+　　　　　　　 　　（　　つつ@　 　　　　 　　　     ヽ _ ,
+　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　　         ヽo--<°))><'
+　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　
+￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　  　
+／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ `~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
+"#;
+
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Flex, Layout, Rect, Spacing},
@@ -10,10 +52,9 @@ use ratatui::{
 };
 
 use crate::{
-    app::{App, InputMode, MENU_SIZE, Menu},
+    app::{Anim, App, InputMode, MENU_SIZE, Menu},
     items::Item,
 };
-
 struct ItemList {
     items: Vec<Box<dyn Item>>,
     state: ListState,
@@ -104,35 +145,14 @@ Sam: dub";
             .border_type(BorderType::Rounded)
             .merge_borders(MergeStrategy::Exact);
 
-        let _cat = r#"
-　　 　　  　　, -ｰ,
-　　　　　　 ／　　 |
-　　 ∧∧　　／　　　 |
-　　(*ﾟ－ﾟ)／.　 　 |
-　　 |　つ'@　　 　 |
-　 ～＿`)｀).　  　 |
-￣￣￣しU　　　　 　 |
-　　　　　|　 　　　 |
-～～～～～～～～～～～～
-"#;
+        let mut frame = DEFAULT_FRAME;
+        match self.anim {
+            Anim::DEFAULT => frame = DEFAULT_FRAME,
+            Anim::BITING => frame = BITE_FRAME,
+            Anim::CATCHING => frame = CATCH_FRAME,
+        };
 
-        let cat2 = r#"
-
-　　　　　　　　　　　　　　　　　　　 ,
-　　　　　　　　　　　　　　 　 　　,／ヽ
-　　　　　　　　　　　　　 　 　 ,／　　　ヽ
-　　　　 　　　　　  ∧＿∧　　,／　　　　　　ヽ
-　　　　　 　　　　（ ´∀｀）,／　 　　　　　　 ヽ
-　　　　　　　 　　（　　つつ@　 　　　　 　　　　ヽ
-　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　　　  ヽ
-　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　　ヽ
-￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　   　o
-／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ ~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
-"#;
-        Paragraph::new(cat2)
-            // .centered()
-            .block(block)
-            .render(area, buf);
+        Paragraph::new(frame).block(block).render(area, buf);
     }
 
     fn render_toolbar(&self, area: Rect, buf: &mut Buffer) {
