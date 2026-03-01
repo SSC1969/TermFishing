@@ -12,7 +12,7 @@ use crate::{
 };
 
 struct ItemList {
-    items: Vec<Item>,
+    items: Vec<Box<dyn Item>>,
     state: ListState,
 }
 

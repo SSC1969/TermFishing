@@ -6,73 +6,124 @@ use std::path::Path;
 use rand::RngExt;
 use rand_distr::Distribution;
 use rand_distr::weighted::WeightedIndex;
+use ratatui::{style::Color, text::Span, widgets::ListItem};
 use serde::Deserialize;
-use strum::{EnumIter, IntoEnumIterator};
+use strum::{EnumIter, EnumProperty, IntoEnumIterator, VariantArray};
 
-use crate::{
-    SPECIES,
-    items::{Item, ItemBase, ItemKind},
-};
+use crate::{SPECIES, items::Item};
 
-#[derive(Eq, Hash, PartialEq, Clone, Debug)]
+#[derive(Default, Eq, Hash, PartialEq, Clone, Debug)]
 pub struct Fish {
+    pub species: Species,
     pub length: u32,
     pub weight: u32,
-    pub rarity: Rarity,
+    pub quality: FishQuality,
 }
 
-impl Fish {
-    pub fn new(name: &str, value: u32, length: u32, weight: u32, rarity: Rarity) -> Item {
-        Item {
-            base: ItemBase {
-                name: String::from(name),
-                value,
-            },
-            kind: ItemKind::Fish(Fish {
-                length,
-                weight,
-                rarity,
-            }),
-        }
-    }
-}
-
-#[derive(Deserialize, Debug)]
-pub enum Colour {
-    Red,
-    Green,
-    Blue,
-}
-
-#[derive(Deserialize, Debug, Eq, PartialEq, Hash, Clone, EnumIter)]
-pub enum Rarity {
+#[derive(Default, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy, EnumIter)]
+pub enum SpeciesRarity {
+    #[default]
     Common,
     Rare,
     Epic,
     Legendary,
 }
 
-impl Rarity {
+#[derive(PartialEq, Eq, Debug, Hash, Clone, VariantArray, EnumProperty, EnumIter)]
+pub enum FishQuality {
+    #[strum(props(w = 50))]
+    Shoddy,
+    #[strum(props(w = 40))]
+    Mediocre,
+    #[strum(props(w = 30))]
+    Average,
+    #[strum(props(w = 10))]
+    Fine,
+    #[strum(props(w = 5))]
+    Lovely,
+    #[strum(props(w = 1))]
+    Resplendent,
+}
+
+impl Fish {
+    pub fn generate() -> Self {
+        let mut rng = rand::rng();
+        let s = SPECIES[rng.random_range(0..SPECIES.len())].clone();
+        let length = rng.random_range(s.min_len..s.max_len);
+        let weight = rng.random_range(s.min_weight..s.max_weight);
+        let quality = FishQuality::generate();
+
+        return Fish {
+            species: s,
+            length,
+            weight,
+            quality,
+        };
+    }
+}
+
+impl Item for Fish {
+    fn name(&self) -> String {
+        self.species.name.clone()
+    }
+
+    fn value(&self) -> i32 {
+        let species = &self.species;
+        let weight_factor = (self.weight - species.min_weight) as f32
+            / (species.max_weight - species.min_weight) as f32;
+        (species.base_value as f32 * species.rarity.multiplier() * (weight_factor as f32 + 0.5))
+            as i32
+    }
+
+    fn info(&self) -> String {
+        "".to_string()
+    }
+
+    fn icon(&self) -> Span {
+        Span::from("o<")
+    }
+}
+
+impl FishQuality {
+    fn generate() -> Self {
+        let mut rng = rand::rng();
+        let qualities: Vec<FishQuality> = FishQuality::VARIANTS.to_vec();
+        let weights: Vec<i64> = FishQuality::iter()
+            .map(|q| q.get_int("w").unwrap())
+            .collect();
+        let dist = WeightedIndex::new(&weights).unwrap();
+
+        qualities[dist.sample(&mut rng)].clone()
+    }
+}
+
+impl Default for FishQuality {
+    fn default() -> Self {
+        FishQuality::generate()
+    }
+}
+
+impl SpeciesRarity {
     pub fn multiplier(&self) -> f32 {
         match self {
-            Rarity::Common => 1.0,
-            Rarity::Rare => 1.5,
-            Rarity::Epic => 2.0,
-            Rarity::Legendary => 2.5,
+            SpeciesRarity::Common => 1.0,
+            SpeciesRarity::Rare => 1.5,
+            SpeciesRarity::Epic => 2.0,
+            SpeciesRarity::Legendary => 2.5,
         }
     }
 
     pub fn odds(&self) -> f32 {
         match self {
-            Rarity::Common => 0.5,
-            Rarity::Rare => 0.3,
-            Rarity::Epic => 0.15,
-            Rarity::Legendary => 0.05,
+            SpeciesRarity::Common => 0.5,
+            SpeciesRarity::Rare => 0.3,
+            SpeciesRarity::Epic => 0.15,
+            SpeciesRarity::Legendary => 0.05,
         }
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(PartialEq, Eq, Deserialize, Default, Debug, Hash, Clone)]
 pub struct Species {
     name: String,
     base_value: u32,
@@ -81,8 +132,8 @@ pub struct Species {
     min_weight: u32,
     max_weight: u32,
     icon: String,
-    colour: Colour,
-    rarity: Rarity,
+    colour: Color,
+    rarity: SpeciesRarity,
 }
 
 pub fn read_species_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Species>, Box<dyn Error>> {
@@ -92,26 +143,6 @@ pub fn read_species_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Species>, B
     let species: Vec<Species> = serde_json::from_reader(reader)?;
 
     Ok(species)
-}
-
-fn generate_rarity() -> Rarity {
-    let mut rng = rand::rng();
-    let rarities: Vec<Rarity> = Rarity::iter().collect();
-    let weights: Vec<f32> = rarities.iter().map(|r| r.odds()).collect();
-    let dist = WeightedIndex::new(&weights).unwrap();
-    let rarity = rarities[dist.sample(&mut rng)].clone();
-    return rarity;
-}
-
-pub fn generate_fish() -> Item {
-    let mut rng = rand::rng();
-    let s = &SPECIES[rng.random_range(0..SPECIES.len())];
-    let length = rng.random_range(s.min_len..s.max_len);
-    let weight = rng.random_range(s.min_weight..s.max_weight);
-    let weight_factor = (weight - s.min_weight) as f32 / (s.max_weight - s.min_weight) as f32;
-    let value = s.base_value as f32 * s.rarity.multiplier() * (weight_factor + 0.5);
-    let rarity = generate_rarity();
-    return Fish::new(s.name.as_str(), value as u32, length, weight, rarity);
 }
 
 #[cfg(test)]
@@ -146,7 +177,7 @@ mod tests {
     #[test]
     fn test_generate_fish() {
         for _ in 0..10 {
-            let fish = generate_fish();
+            let fish = Fish::generate();
             println!("{:?}", fish);
         }
     }

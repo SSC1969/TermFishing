@@ -1,31 +1,28 @@
-use ratatui::{text::Line, widgets::ListItem};
-
-use crate::items::fish::Fish;
+use dyn_clone::DynClone;
+use dyn_eq::DynEq;
+use ratatui::{
+    text::{Line, Span, Text},
+    widgets::ListItem,
+};
 
 pub mod fish;
 
-#[derive(Eq, Hash, PartialEq, Clone, Debug)]
-pub struct ItemBase {
-    pub name: String,
-    pub value: u32,
+pub trait Item: DynEq + DynClone {
+    fn name(&self) -> String;
+    fn value(&self) -> i32;
+    fn info(&self) -> String;
+    fn icon(&self) -> Span;
 }
+dyn_eq::eq_trait_object!(Item);
+dyn_clone::clone_trait_object!(Item);
 
-#[derive(Eq, Hash, PartialEq, Clone, Debug)]
-pub enum ItemKind {
-    Fish(Fish),
-}
+impl<'a> From<&'a Box<dyn Item>> for ListItem<'a> {
+    fn from(item: &'a Box<dyn Item>) -> ListItem<'a> {
+        let icon = item.icon();
+        let line1 = Line::from(icon);
 
-#[derive(Eq, Hash, PartialEq, Clone, Debug)]
-pub struct Item {
-    pub base: ItemBase,
-    pub kind: ItemKind,
-}
+        let line2 = Line::from(item.info());
 
-impl From<&Item> for ListItem<'_> {
-    fn from(item: &Item) -> Self {
-        ListItem::new(Line::from(format!(
-            "{} ({:?}) - ${}",
-            item.base.name, item.kind, item.base.value
-        )))
+        ListItem::new(Text::from(vec![line1, "".into(), line2]))
     }
 }

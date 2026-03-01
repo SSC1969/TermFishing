@@ -37,7 +37,6 @@ impl Menu {
 }
 
 /// Application.
-#[derive(Debug)]
 pub struct App {
     /// Is the application running?
     pub running: bool,
