@@ -1,6 +1,6 @@
 mod app;
 mod chat;
-mod dex;
+mod items;
 mod inventory;
 mod player;
 
