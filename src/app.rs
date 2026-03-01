@@ -11,6 +11,8 @@ pub enum Menu {
     Options,
 }
 
+pub const MENU_SIZE: i32 = 4;
+
 impl Menu {
     fn next(&self) -> Self {
         match self {

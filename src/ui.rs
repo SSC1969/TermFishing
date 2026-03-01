@@ -1,11 +1,12 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Rect, Spacing},
+    layout::{Alignment, Constraint, Flex, Layout, Rect, Spacing},
     symbols::merge::MergeStrategy,
+    text::Line,
     widgets::{Block, BorderType, Paragraph, Widget},
 };
 
-use crate::app::{App, Menu};
+use crate::app::{App, MENU_SIZE, Menu};
 
 impl Widget for &App {
     /// Renders the user interface widgets.
@@ -21,7 +22,7 @@ impl Widget for &App {
         //     .border_type(BorderType::Rounded);
         //
         // let inner = block.inner(area);
-        let [main, toolbar] = Layout::vertical([Constraint::Fill(1), Constraint::Max(5)])
+        let [main, toolbar] = Layout::vertical([Constraint::Fill(1), Constraint::Max(3)])
             .spacing(Spacing::Overlap(1))
             .areas(area);
         let [viewport, menu] =
@@ -54,10 +55,22 @@ impl App {
             .border_type(BorderType::Rounded)
             .merge_borders(MergeStrategy::Exact);
 
-        Paragraph::new("Yuh I'm fishin' it")
+        let inner = block.inner(area).centered_horizontally(Constraint::Fill(1));
+        let constraints = (0..MENU_SIZE).map(|_| Constraint::Ratio(1, MENU_SIZE as u32));
+        let layout = Layout::horizontal(constraints)
+            .flex(Flex::Center)
+            .split(inner);
+
+        Line::from("<h> Home").centered().render(layout[0], buf);
+        Line::from("<i> Inventory")
             .centered()
-            .block(block)
-            .render(area, buf);
+            .render(layout[1], buf);
+        Line::from("<c> Collection")
+            .centered()
+            .render(layout[2], buf);
+        Line::from("<o> Options").centered().render(layout[3], buf);
+
+        block.render(area, buf);
     }
 
     fn render_menu(&self, area: Rect, buf: &mut Buffer) {
