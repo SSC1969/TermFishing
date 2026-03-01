@@ -1,5 +1,4 @@
 use ratatui::{
-    Frame,
     buffer::Buffer,
     layout::{Alignment, Constraint, Flex, Layout, Rect, Spacing},
     style::{Color, Style},
@@ -8,7 +7,6 @@ use ratatui::{
     widgets::{Block, BorderType, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
 };
 
-use tui_input::Input;
 
 use crate::{
     app::{App, InputMode, MENU_SIZE, Menu},
@@ -105,7 +103,7 @@ Sam: dub";
             .border_type(BorderType::Rounded)
             .merge_borders(MergeStrategy::Exact);
 
-        let cat = r#"
+        let _cat = r#"
 　　 　　  　　, -ｰ,
 　　　　　　 ／　　 |
 　　 ∧∧　　／　　　 |

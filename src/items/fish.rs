@@ -6,7 +6,7 @@ use std::path::Path;
 use rand::RngExt;
 use rand_distr::Distribution;
 use rand_distr::weighted::WeightedIndex;
-use ratatui::{style::Color, text::Span, widgets::ListItem};
+use ratatui::{style::Color, text::Span};
 use serde::Deserialize;
 use strum::{EnumIter, EnumProperty, IntoEnumIterator, VariantArray};
 
@@ -79,7 +79,7 @@ impl Item for Fish {
         "".to_string()
     }
 
-    fn icon(&self) -> Span {
+    fn icon(&self) -> Span<'_> {
         Span::from("o<")
     }
 }
