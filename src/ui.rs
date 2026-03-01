@@ -1,7 +1,7 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Rect},
-    style::{Color, Stylize},
+    layout::{Alignment, Constraint, Layout, Rect, Spacing},
+    symbols::merge::MergeStrategy,
     widgets::{Block, BorderType, Paragraph, Widget},
 };
 
@@ -15,25 +15,61 @@ impl Widget for &App {
     // - https://docs.rs/ratatui/latest/ratatui/widgets/index.html
     // - https://github.com/ratatui/ratatui/tree/master/examples
     fn render(self, area: Rect, buf: &mut Buffer) {
+        // let block = Block::bordered()
+        //     .title("Fishin'")
+        //     .title_alignment(Alignment::Center)
+        //     .border_type(BorderType::Rounded);
+        //
+        // let inner = block.inner(area);
+        let [main, toolbar] = Layout::vertical([Constraint::Fill(1), Constraint::Max(5)])
+            .spacing(Spacing::Overlap(1))
+            .areas(area);
+        let [viewport, menu] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Percentage(25)])
+                .spacing(Spacing::Overlap(1))
+                .areas(main);
+
+        self.render_viewport(viewport, buf);
+        self.render_menu(menu, buf);
+        self.render_toolbar(toolbar, buf);
+    }
+}
+
+impl App {
+    fn render_viewport(&self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
-            .title("{{project-name}}")
-            .title_alignment(Alignment::Center)
-            .border_type(BorderType::Rounded);
+            .title("Fishin'")
+            .title_alignment(Alignment::Left)
+            .border_type(BorderType::Rounded)
+            .merge_borders(MergeStrategy::Exact);
 
-        let text = format!(
-            "This is a tui template.\n\
-                Press `Esc`, `Ctrl-C` or `q` to stop running.\n\
-                Press left and right to increment and decrement the counter respectively.\n\
-                Counter: {}",
-            self.counter
-        );
-
-        let paragraph = Paragraph::new(text)
+        Paragraph::new("Yuh I'm fishin' it")
+            .centered()
             .block(block)
-            .fg(Color::Cyan)
-            .bg(Color::Black)
-            .centered();
+            .render(area, buf);
+    }
 
-        paragraph.render(area, buf);
+    fn render_toolbar(&self, area: Rect, buf: &mut Buffer) {
+        let block = Block::bordered()
+            .border_type(BorderType::Rounded)
+            .merge_borders(MergeStrategy::Exact);
+
+        Paragraph::new("Yuh I'm fishin' it")
+            .centered()
+            .block(block)
+            .render(area, buf);
+    }
+
+    fn render_menu(&self, area: Rect, buf: &mut Buffer) {
+        let block = Block::bordered()
+            .title("Menu")
+            .title_alignment(Alignment::Left)
+            .border_type(BorderType::Rounded)
+            .merge_borders(MergeStrategy::Exact);
+
+        Paragraph::new("Yuh I'm fishin' it")
+            .centered()
+            .block(block)
+            .render(area, buf);
     }
 }

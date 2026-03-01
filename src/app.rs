@@ -7,8 +7,6 @@ use ratatui::DefaultTerminal;
 pub struct App {
     /// Is the application running?
     pub running: bool,
-    /// Counter.
-    pub counter: u8,
     /// Event handler.
     pub events: EventHandler,
 }
@@ -17,7 +15,6 @@ impl Default for App {
     fn default() -> Self {
         Self {
             running: true,
-            counter: 0,
             events: EventHandler::new(),
         }
     }
