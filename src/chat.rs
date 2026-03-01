@@ -11,9 +11,15 @@ use std::{
     hash::{Hash, Hasher},
     time::Duration,
 };
-use tokio::{io, io::AsyncBufReadExt, select};
+use tokio::{
+    io::{self, AsyncBufReadExt},
+    select,
+    sync::mpsc::{Receiver, UnboundedSender},
+};
 
 use tracing_subscriber::EnvFilter;
+
+use crate::event::{AppEvent, Event};
 
 #[derive(NetworkBehaviour)]
 struct CustomBehaviour {
@@ -32,34 +38,40 @@ struct Message {
     message: String,
 }
 
-async fn chat() -> Result<(), Box<dyn Error>> {
-    // read full lines from stdin
+// async fn chat() -> Result<(), Box<dyn Error>> {
+//     // read full lines from stdin
 
+//     let mut user_info = UserInfo::default();
+
+//     loop {
+//         println!("Enter your name:");
+
+//         let mut stdin = io::BufReader::new(io::stdin()).lines();
+
+//         let line = stdin.next_line().await?;
+
+//         match line {
+//             Some(name) => {
+//                 println!("Your name is '{name}'. Searching for connection...");
+//                 user_info.name = name;
+//                 break;
+//             }
+//             _ => {
+//                 println!("Invalid name! Try again:");
+//             }
+//         }
+//     }
+
+//     create_and_connect(user_info).await
+// }
+
+pub async fn create_and_connect(
+    user_name: String,
+    mut rx: Receiver<String>,
+    event_tx: UnboundedSender<Event>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut user_info = UserInfo::default();
-
-    loop {
-        println!("Enter your name:");
-
-        let mut stdin = io::BufReader::new(io::stdin()).lines();
-
-        let line = stdin.next_line().await?;
-
-        match line {
-            Some(name) => {
-                println!("Your name is '{name}'. Searching for connection...");
-                user_info.name = name;
-                break;
-            }
-            _ => {
-                println!("Invalid name! Try again:");
-            }
-        }
-    }
-
-    create_and_connect(user_info).await
-}
-
-async fn create_and_connect(user_info: UserInfo) -> Result<(), Box<dyn Error>> {
+    user_info.name = user_name;
     let _ = tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .try_init();
@@ -108,13 +120,13 @@ async fn create_and_connect(user_info: UserInfo) -> Result<(), Box<dyn Error>> {
     // swarm.listen_on("/ip4/0.0.0.0/udp/0/quic-v1".parse()?)?;
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
 
-    println!("Enter messages via STDIN to send to connected peers using gossipsub");
+    // println!("Enter messages via STDIN to send to connected peers using gossipsub");
 
-    let mut stdin = io::BufReader::new(io::stdin()).lines();
+    // let mut stdin = io::BufReader::new(io::stdin()).lines();
 
     loop {
         select! {
-            Ok(Some(line)) = stdin.next_line() => {
+            Some(line) = rx.recv() => {
                 let message = Message { sender_name: user_info.name.clone(), message: line };
                 let buf = rmp_serde::to_vec(&message);
 
@@ -132,13 +144,13 @@ async fn create_and_connect(user_info: UserInfo) -> Result<(), Box<dyn Error>> {
             event = swarm.select_next_some() => match event {
                 SwarmEvent::Behaviour(CustomBehaviourEvent::Mdns(mdns::Event::Discovered(list))) => {
                     for (peer_id, _multiaddr) in list {
-                        println!("mDNS discovered a new peer: {peer_id}");
+                        // println!("mDNS discovered a new peer: {peer_id}");
                         swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer_id);
                     }
                 },
                 SwarmEvent::Behaviour(CustomBehaviourEvent::Mdns(mdns::Event::Expired(list))) => {
                     for (peer_id, _multiaddr) in list {
-                        println!("mDNS discover peer has expired: {peer_id}");
+                        // println!("mDNS discover peer has expired: {peer_id}");
                         swarm.behaviour_mut().gossipsub.remove_explicit_peer(&peer_id);
                     }
                 },
@@ -148,10 +160,12 @@ async fn create_and_connect(user_info: UserInfo) -> Result<(), Box<dyn Error>> {
                     message,
                 })) => {
                     let message_struct: Message = rmp_serde::from_slice(&message.data)?;
-                    println!("{}: {}", message_struct.sender_name, message_struct.message);
+                    let msg = format!("{}: {}", message_struct.sender_name, message_struct.message);
+                    println!("{}", msg.clone());
+                    let _ = event_tx.send(Event::App(AppEvent::MessageReceived(msg)));
                 },
                 SwarmEvent::NewListenAddr { address, .. } => {
-                    println!("Local node is listening on {address}");
+                    // println!("Local node is listening on {address}");
                 },
                 _ => {}
             }

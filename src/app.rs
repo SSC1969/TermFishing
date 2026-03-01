@@ -4,6 +4,7 @@ use crate::{
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{DefaultTerminal, widgets::ListState};
+use tokio::sync::mpsc::Sender;
 use tui_input::{Input, backend::crossterm::EventHandler as crosstermEventHandler};
 
 #[derive(Clone, Default, Debug)]
@@ -39,6 +40,7 @@ impl Menu {
 
 /// Application.
 pub struct App {
+    pub tx: Sender<String>,
     /// Is the application running?
     pub running: bool,
     /// Event handler.
@@ -66,9 +68,11 @@ pub enum InputMode {
     Editing,
 }
 
-impl Default for App {
-    fn default() -> Self {
+impl App {
+    /// Constructs a new instance of [`App`].
+    pub fn new(tx: Sender<String>) -> Self {
         Self {
+            tx: tx,
             running: true,
             events: EventHandler::new(),
             menu: Menu::default(),
@@ -79,19 +83,6 @@ impl Default for App {
             messages: Vec::new(),
             cursor_position: Option::Some((0, 0)),
         }
-    }
-}
-
-// temporary, for debugging
-// should connect to the network and send the message out
-fn send_message(msg: String) {
-    println!("{}", msg);
-}
-
-impl App {
-    /// Constructs a new instance of [`App`].
-    pub fn new() -> Self {
-        Self::default()
     }
 
     /// Run the application's main loop.
@@ -123,7 +114,8 @@ impl App {
                         InputMode::Normal => self.input_mode = im,
                         InputMode::Editing => self.input_mode = im,
                     },
-                    AppEvent::SendChat(message) => send_message(message),
+                    AppEvent::SendChat(msg) => self.tx.send(msg).await?,
+                    AppEvent::MessageReceived(msg) => self.messages.push(msg),
                 },
             }
         }
