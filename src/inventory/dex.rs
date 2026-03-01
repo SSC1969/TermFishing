@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{inventory::Inventory, items::Item};
 
 pub struct Dex {
-    items: HashMap<String, Vec<Item>>,
+    pub items: HashMap<String, Vec<Item>>,
 }
 
 impl Inventory for Dex {

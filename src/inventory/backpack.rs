@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use crate::{inventory::Inventory, items::Item};
 
 pub struct Backpack {
-    items: HashMap<String, HashSet<Item>>,
+    pub items: HashMap<String, HashSet<Item>>,
 }
 
 impl Inventory for Backpack {
