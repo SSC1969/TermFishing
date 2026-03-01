@@ -3,9 +3,9 @@ pub mod dex;
 
 use crate::items::Item;
 
-trait Inventory {
+pub trait Inventory {
     // Search for items matching the given params
-    fn search(name: String, value: u32) -> Vec<Item>;
-    fn add_item(i: Item);
-    fn remove_item(i: Item);
+    fn search(&self, name: String) -> Vec<&Item>;
+    fn add_item(&mut self, i: Item);
+    fn remove_item(&mut self, i: Item);
 }
