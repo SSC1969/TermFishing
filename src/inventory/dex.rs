@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{inventory::Inventory, items::Item};
-
+#[derive(Default, Debug)]
 pub struct Dex {
     pub items: HashMap<String, Vec<Item>>,
 }

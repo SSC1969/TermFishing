@@ -1,6 +1,6 @@
 use crate::items::{Item, ItemBase, ItemKind};
 
-#[derive(Eq, Hash, PartialEq, Clone)]
+#[derive(Eq, Hash, PartialEq, Clone, Debug)]
 pub struct Fish {
     pub length: u32,
     pub weight: u32,

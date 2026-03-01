@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{inventory::Inventory, items::Item};
 
+#[derive(Default, Debug)]
 pub struct Backpack {
     pub items: HashMap<String, HashSet<Item>>,
 }

@@ -6,6 +6,7 @@ use crate::inventory::{backpack::Backpack, dex::Dex};
 use crate::items::fish::{self, Fish};
 use crate::items::{self, Item, ItemBase, ItemKind};
 
+#[derive(Default, Debug)]
 pub struct Player {
     backpack: Backpack,
     dex: Dex,
@@ -40,14 +41,7 @@ mod tests {
 
     #[test]
     fn test_catch_fish() {
-        let mut p = Player {
-            backpack: Backpack {
-                items: HashMap::new(),
-            },
-            dex: Dex {
-                items: HashMap::new(),
-            },
-        };
+        let mut p = Player::default();
         p.catch_fish();
         assert!(p.backpack.search("Halibut".to_string()).len() == 1)
     }
