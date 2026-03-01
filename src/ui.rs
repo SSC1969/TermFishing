@@ -4,9 +4,10 @@ use ratatui::{
     style::{Color, Style},
     symbols::merge::MergeStrategy,
     text::Line,
-    widgets::{Block, BorderType, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
+    widgets::{
+        Block, BorderType, List, ListItem, ListState, Padding, Paragraph, StatefulWidget, Widget,
+    },
 };
-
 
 use crate::{
     app::{App, InputMode, MENU_SIZE, Menu},
@@ -162,7 +163,8 @@ Sam: dub";
             .title(format!("{:?}", self.menu))
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded)
-            .merge_borders(MergeStrategy::Exact);
+            .merge_borders(MergeStrategy::Exact)
+            .padding(Padding::horizontal(1));
 
         match self.menu {
             Menu::Home => Paragraph::new("Home")

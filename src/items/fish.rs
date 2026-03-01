@@ -6,7 +6,10 @@ use std::path::Path;
 use rand::RngExt;
 use rand_distr::Distribution;
 use rand_distr::weighted::WeightedIndex;
-use ratatui::{style::Color, text::Span};
+use ratatui::{
+    style::{Color, Style},
+    text::Span,
+};
 use serde::Deserialize;
 use strum::{EnumIter, EnumProperty, IntoEnumIterator, VariantArray};
 
@@ -76,11 +79,14 @@ impl Item for Fish {
     }
 
     fn info(&self) -> String {
-        "".to_string()
+        format!("{}g | {}cm - {:?}", self.weight, self.length, self.quality)
     }
 
     fn icon(&self) -> Span<'_> {
-        Span::from("o<")
+        Span::styled(
+            self.species.icon.clone(),
+            Style::default().fg(self.species.colour),
+        )
     }
 }
 
