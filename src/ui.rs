@@ -3,12 +3,20 @@ use ratatui::{
     layout::{Alignment, Constraint, Flex, Layout, Rect, Spacing},
     symbols::merge::MergeStrategy,
     text::Line,
-    widgets::{Block, BorderType, Paragraph, Widget},
+    widgets::{Block, BorderType, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
 };
 
-use crate::app::{App, MENU_SIZE, Menu};
+use crate::{
+    app::{App, MENU_SIZE, Menu},
+    items::Item,
+};
 
-impl Widget for &App {
+struct ItemList {
+    items: Vec<Item>,
+    state: ListState,
+}
+
+impl Widget for &mut App {
     /// Renders the user interface widgets.
     ///
     // This is where you add new widgets.
@@ -73,21 +81,38 @@ impl App {
         block.render(area, buf);
     }
 
-    fn render_menu(&self, area: Rect, buf: &mut Buffer) {
+    fn render_menu(&mut self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
             .title(format!("{:?}", self.menu))
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded)
             .merge_borders(MergeStrategy::Exact);
 
-        (match self.menu {
-            Menu::Home => Paragraph::new("Home"),
-            Menu::Inventory => Paragraph::new("Inventory"),
-            Menu::Collection => Paragraph::new("Collection"),
-            Menu::Options => Paragraph::new("Options"),
-        })
-        .block(block)
-        .centered()
-        .render(area, buf);
+        match self.menu {
+            Menu::Home => Paragraph::new("Home")
+                .centered()
+                .block(block)
+                .render(area, buf),
+            Menu::Inventory => {
+                let list_items = self
+                    .player
+                    .backpack
+                    .items
+                    .values()
+                    .map(|set| set.iter())
+                    .flatten()
+                    .map(|item| ListItem::from(item));
+                let list = List::new(list_items).block(block);
+                StatefulWidget::render(list, area, buf, &mut self.backpack_state);
+            }
+            Menu::Collection => Paragraph::new("Collection")
+                .centered()
+                .block(block)
+                .render(area, buf),
+            Menu::Options => Paragraph::new("Options")
+                .centered()
+                .block(block)
+                .render(area, buf),
+        }
     }
 }

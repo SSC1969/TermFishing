@@ -42,6 +42,8 @@ pub enum AppEvent {
 
     /// Change menus
     ChangeMenu(Menu),
+    /// Debug in a fish
+    DebugFish,
 }
 
 /// Terminal event handler.

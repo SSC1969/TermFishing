@@ -4,12 +4,12 @@ use crate::items::fish::generate_fish;
 
 #[derive(Default, Debug)]
 pub struct Player {
-    backpack: Backpack,
-    dex: Dex,
+    pub backpack: Backpack,
+    pub dex: Dex,
 }
 
 impl Player {
-    fn catch_fish(&mut self) {
+    pub fn catch_fish(&mut self) {
         let fish = generate_fish();
         self.backpack.add_item(fish.clone());
         self.dex.add_item(fish);
