@@ -2,6 +2,35 @@ use crate::event::{AppEvent, Event, EventHandler};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::DefaultTerminal;
 
+#[derive(Clone, Default, Debug)]
+pub enum Menu {
+    #[default]
+    Home,
+    Inventory,
+    Collection,
+    Options,
+}
+
+impl Menu {
+    fn next(&self) -> Self {
+        match self {
+            Menu::Home => Menu::Inventory,
+            Menu::Inventory => Menu::Collection,
+            Menu::Collection => Menu::Options,
+            Menu::Options => Menu::Home,
+        }
+    }
+
+    fn prev(&self) -> Self {
+        match self {
+            Menu::Home => Menu::Options,
+            Menu::Inventory => Menu::Home,
+            Menu::Collection => Menu::Inventory,
+            Menu::Options => Menu::Collection,
+        }
+    }
+}
+
 /// Application.
 #[derive(Debug)]
 pub struct App {
@@ -9,6 +38,8 @@ pub struct App {
     pub running: bool,
     /// Event handler.
     pub events: EventHandler,
+    /// Currently open menu
+    pub menu: Menu,
 }
 
 impl Default for App {
@@ -16,6 +47,7 @@ impl Default for App {
         Self {
             running: true,
             events: EventHandler::new(),
+            menu: Menu::default(),
         }
     }
 }
@@ -42,6 +74,9 @@ impl App {
                 },
                 Event::App(app_event) => match app_event {
                     AppEvent::Quit => self.quit(),
+                    AppEvent::ChangeMenu(menu) => self.menu = menu,
+                    AppEvent::ScrollLeft => self.menu = self.menu.prev(),
+                    AppEvent::ScrollRight => self.menu = self.menu.next(),
                 },
             }
         }
@@ -55,6 +90,16 @@ impl App {
             KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
                 self.events.send(AppEvent::Quit)
             }
+            KeyCode::Left => self.events.send(AppEvent::ScrollLeft),
+            KeyCode::Right => self.events.send(AppEvent::ScrollRight),
+            KeyCode::Char(c) => self.events.send(AppEvent::ChangeMenu(match c {
+                'h' => Menu::Home,
+                'c' => Menu::Collection,
+                'i' => Menu::Inventory,
+                'o' => Menu::Options,
+                _ => Menu::Home,
+            })),
+
             // Other handlers you could add here.
             _ => {}
         }

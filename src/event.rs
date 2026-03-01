@@ -4,6 +4,8 @@ use futures::{FutureExt, StreamExt};
 use std::time::Duration;
 use tokio::sync::mpsc;
 
+use crate::app::Menu;
+
 /// The frequency at which tick events are emitted.
 const TICK_FPS: f64 = 30.0;
 
@@ -33,6 +35,13 @@ pub enum Event {
 pub enum AppEvent {
     /// Quit the application.
     Quit,
+    /// Switch menu left
+    ScrollLeft,
+    /// Switch menu right
+    ScrollRight,
+
+    /// Change menus
+    ChangeMenu(Menu),
 }
 
 /// Terminal event handler.

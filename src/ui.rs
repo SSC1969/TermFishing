@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, BorderType, Paragraph, Widget},
 };
 
-use crate::app::App;
+use crate::app::{App, Menu};
 
 impl Widget for &App {
     /// Renders the user interface widgets.
@@ -62,14 +62,19 @@ impl App {
 
     fn render_menu(&self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
-            .title("Menu")
+            .title(format!("{:?}", self.menu))
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded)
             .merge_borders(MergeStrategy::Exact);
 
-        Paragraph::new("Yuh I'm fishin' it")
-            .centered()
-            .block(block)
-            .render(area, buf);
+        (match self.menu {
+            Menu::Home => Paragraph::new("Home"),
+            Menu::Inventory => Paragraph::new("Inventory"),
+            Menu::Collection => Paragraph::new("Collection"),
+            Menu::Options => Paragraph::new("Options"),
+        })
+        .block(block)
+        .centered()
+        .render(area, buf);
     }
 }
