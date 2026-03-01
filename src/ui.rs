@@ -1,23 +1,13 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Flex, Layout, Rect, Spacing},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     symbols::merge::MergeStrategy,
     text::Line,
-    widgets::{
-        Block, BorderType, List, ListItem, ListState, Padding, Paragraph, StatefulWidget, Widget,
-    },
+    widgets::{Block, BorderType, List, ListItem, Padding, Paragraph, StatefulWidget, Widget},
 };
 
-use crate::{
-    app::{App, InputMode, MENU_SIZE, Menu},
-    items::Item,
-};
-
-struct ItemList {
-    items: Vec<Box<dyn Item>>,
-    state: ListState,
-}
+use crate::app::{App, InputMode, MENU_SIZE, Menu};
 
 impl Widget for &mut App {
     /// Renders the user interface widgets.
@@ -147,9 +137,7 @@ Sam: dub";
             .split(inner);
 
         Line::from("<h> Home").centered().render(layout[0], buf);
-        Line::from("<i> Inventory")
-            .centered()
-            .render(layout[1], buf);
+        Line::from("<b> Backpack").centered().render(layout[1], buf);
         Line::from("<c> Collection")
             .centered()
             .render(layout[2], buf);
@@ -171,7 +159,7 @@ Sam: dub";
                 .centered()
                 .block(block)
                 .render(area, buf),
-            Menu::Inventory => {
+            Menu::Backpack => {
                 let list_items = self
                     .player
                     .backpack
@@ -180,7 +168,9 @@ Sam: dub";
                     .map(|set| set.iter())
                     .flatten()
                     .map(|item| ListItem::from(item));
-                let list = List::new(list_items).block(block);
+                let list = List::new(list_items)
+                    .highlight_style(Style::new().reversed())
+                    .block(block);
                 StatefulWidget::render(list, area, buf, &mut self.backpack_state);
             }
             Menu::Collection => Paragraph::new("Collection")
