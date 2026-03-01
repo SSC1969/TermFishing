@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-    event::{AppEvent, Event, EventHandler},
+    event::{AppEvent, Event, EventHandler, NavigationDirection},
     player::Player,
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -14,7 +14,7 @@ use tui_input::{Input, backend::crossterm::EventHandler as crosstermEventHandler
 pub enum Menu {
     #[default]
     Home,
-    Inventory,
+    Backpack,
     Collection,
     Options,
 }
@@ -24,8 +24,8 @@ pub const MENU_SIZE: i32 = 4;
 impl Menu {
     fn next(&self) -> Self {
         match self {
-            Menu::Home => Menu::Inventory,
-            Menu::Inventory => Menu::Collection,
+            Menu::Home => Menu::Backpack,
+            Menu::Backpack => Menu::Collection,
             Menu::Collection => Menu::Options,
             Menu::Options => Menu::Home,
         }
@@ -34,8 +34,8 @@ impl Menu {
     fn prev(&self) -> Self {
         match self {
             Menu::Home => Menu::Options,
-            Menu::Inventory => Menu::Home,
-            Menu::Collection => Menu::Inventory,
+            Menu::Backpack => Menu::Home,
+            Menu::Collection => Menu::Backpack,
             Menu::Options => Menu::Collection,
         }
     }
@@ -118,8 +118,11 @@ impl App {
                 Event::App(app_event) => match app_event {
                     AppEvent::Quit => self.quit(),
                     AppEvent::ChangeMenu(menu) => self.menu = menu,
-                    AppEvent::ScrollLeft => self.menu = self.menu.prev(),
-                    AppEvent::ScrollRight => self.menu = self.menu.next(),
+                    AppEvent::Navigate(dir) => match dir {
+                        NavigationDirection::Left => self.menu = self.menu.prev(),
+                        NavigationDirection::Right => self.menu = self.menu.next(),
+                        _ => {}
+                    },
                     AppEvent::FishBiting => {
                         self.anim = Anim::BITING;
                         self.events.send(AppEvent::SendChat("biting...".to_owned()));
@@ -181,23 +184,43 @@ impl App {
             KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
                 self.events.send(AppEvent::Quit)
             }
-            KeyCode::Left => self.events.send(AppEvent::ScrollLeft),
-            KeyCode::Right => self.events.send(AppEvent::ScrollRight),
+            KeyCode::Left => self
+                .events
+                .send(AppEvent::Navigate(NavigationDirection::Left)),
+            KeyCode::Right => self
+                .events
+                .send(AppEvent::Navigate(NavigationDirection::Right)),
             KeyCode::Char(' ') => self.events.send(AppEvent::FishBiting),
             KeyCode::Char('t') => self
                 .events
                 .send(AppEvent::ChangeInputMode(InputMode::Editing)),
-            KeyCode::Char(c) => self.events.send(AppEvent::ChangeMenu(match c {
-                'h' => Menu::Home,
-                'c' => Menu::Collection,
-                'i' => Menu::Inventory,
-                'o' => Menu::Options,
-                _ => Menu::Home,
-            })),
+            KeyCode::Char('h') => self.events.send(AppEvent::ChangeMenu(Menu::Home)),
+            KeyCode::Char('c') => self.events.send(AppEvent::ChangeMenu(Menu::Collection)),
+            KeyCode::Char('b') => self.events.send(AppEvent::ChangeMenu(Menu::Backpack)),
+            KeyCode::Char('o') => self.events.send(AppEvent::ChangeMenu(Menu::Options)),
 
-            // Other handlers you could add here.
+            // Send any remaining events to the open menu for processing
+            _ => self.handle_menu_key_events(key_event)?,
+        }
+        Ok(())
+    }
+
+    fn handle_menu_key_events(&mut self, key_event: KeyEvent) -> color_eyre::Result<()> {
+        match self.menu {
+            Menu::Backpack => {
+                if let None = self.backpack_state.selected() {
+                    self.backpack_state.select_first();
+                }
+
+                match key_event.code {
+                    KeyCode::Up => self.backpack_state.select_previous(),
+                    KeyCode::Down => self.backpack_state.select_next(),
+                    _ => {}
+                }
+            }
             _ => {}
         }
+
         Ok(())
     }
 

@@ -9,6 +9,14 @@ use crate::app::{InputMode, Menu};
 /// The frequency at which tick events are emitted.
 const TICK_FPS: f64 = 30.0;
 
+#[derive(Clone, Debug)]
+pub enum NavigationDirection {
+    Left,
+    Right,
+    Up,
+    Down,
+}
+
 /// Representation of all possible events.
 #[derive(Clone, Debug)]
 pub enum Event {
@@ -35,10 +43,9 @@ pub enum Event {
 pub enum AppEvent {
     /// Quit the application.
     Quit,
-    /// Switch menu left
-    ScrollLeft,
-    /// Switch menu right
-    ScrollRight,
+
+    /// Navigate/navigate
+    Navigate(NavigationDirection),
 
     /// Change menus
     ChangeMenu(Menu),
