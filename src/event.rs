@@ -4,7 +4,7 @@ use futures::{FutureExt, StreamExt};
 use std::time::Duration;
 use tokio::sync::mpsc;
 
-use crate::app::Menu;
+use crate::app::{InputMode, Menu};
 
 /// The frequency at which tick events are emitted.
 const TICK_FPS: f64 = 30.0;
@@ -44,6 +44,10 @@ pub enum AppEvent {
     ChangeMenu(Menu),
     /// Debug in a fish
     DebugFish,
+
+    ChangeInputMode(InputMode),
+
+    SendChat(String),
 }
 
 /// Terminal event handler.

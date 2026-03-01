@@ -1,13 +1,17 @@
 use ratatui::{
+    Frame,
     buffer::Buffer,
     layout::{Alignment, Constraint, Flex, Layout, Rect, Spacing},
+    style::{Color, Style},
     symbols::merge::MergeStrategy,
     text::Line,
     widgets::{Block, BorderType, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
 };
 
+use tui_input::Input;
+
 use crate::{
-    app::{App, MENU_SIZE, Menu},
+    app::{App, InputMode, MENU_SIZE, Menu},
     items::Item,
 };
 
@@ -38,13 +42,62 @@ impl Widget for &mut App {
                 .spacing(Spacing::Overlap(1))
                 .areas(main);
 
+        let [_, viewport_bottom] =
+            Layout::vertical([Constraint::Fill(1), Constraint::Max(8)]).areas(viewport);
+
+        let [_, chatbox] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Max(40)]).areas(viewport_bottom);
+
+        let [messages, input] =
+            Layout::vertical([Constraint::Fill(1), Constraint::Max(3)]).areas(chatbox);
+
         self.render_viewport(viewport, buf);
         self.render_menu(menu, buf);
         self.render_toolbar(toolbar, buf);
+        self.render_messages(messages, buf);
+        self.render_input(input, buf);
     }
 }
 
 impl App {
+    // move to bottom of impl
+    fn render_input(&mut self, area: Rect, buf: &mut Buffer) {
+        let width = area.width.max(3) - 3;
+        let scroll = self.input.visual_scroll(width as usize);
+        let style = match self.input_mode {
+            InputMode::Normal => Style::default(),
+            InputMode::Editing => Color::Yellow.into(),
+        };
+        let input = Paragraph::new(self.input.value())
+            .style(style)
+            .scroll((0, scroll as u16))
+            .block(Block::bordered());
+        input.render(area, buf);
+
+        if self.input_mode == InputMode::Editing {
+            let x = self.input.visual_cursor().max(scroll) - scroll + 1;
+            self.cursor_position = Some((area.x + x as u16, area.y + 1));
+        }
+    }
+
+    fn render_messages(&self, area: Rect, buf: &mut Buffer) {
+        let start = self.messages.len().saturating_sub(3);
+        let messages = self.messages[start..].iter().map(String::as_str);
+        let messages = List::new(messages).block(Block::bordered().title("Messages"));
+        // multiple renders()'s so specify widget
+        Widget::render(messages, area, buf);
+    }
+
+    fn render_chat(&self, area: Rect, buf: &mut Buffer) {
+        let block = Block::new();
+        let chat = "
+Adam caught [LEGENDARY] Salmon
+Adam: yooooo
+Sam: dub";
+
+        Paragraph::new(chat).block(block).render(area, buf);
+    }
+
     fn render_viewport(&self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
             .title("Fishin'")
@@ -52,8 +105,33 @@ impl App {
             .border_type(BorderType::Rounded)
             .merge_borders(MergeStrategy::Exact);
 
-        Paragraph::new("Yuh I'm fishin' it")
-            .centered()
+        let cat = r#"
+　　 　　  　　, -ｰ,
+　　　　　　 ／　　 |
+　　 ∧∧　　／　　　 |
+　　(*ﾟ－ﾟ)／.　 　 |
+　　 |　つ'@　　 　 |
+　 ～＿`)｀).　  　 |
+￣￣￣しU　　　　 　 |
+　　　　　|　 　　　 |
+～～～～～～～～～～～～
+"#;
+
+        let cat2 = r#"
+
+　　　　　　　　　　　　　　　　　　　 ,
+　　　　　　　　　　　　　　 　 　　,／ヽ
+　　　　　　　　　　　　　 　 　 ,／　　　ヽ
+　　　　 　　　　　  ∧＿∧　　,／　　　　　　ヽ
+　　　　　 　　　　（ ´∀｀）,／　 　　　　　　 ヽ
+　　　　　　　 　　（　　つつ@　 　　　　 　　　　ヽ
+　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　　　  ヽ
+　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　　ヽ
+￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　   　o
+／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ ~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
+"#;
+        Paragraph::new(cat2)
+            // .centered()
             .block(block)
             .render(area, buf);
     }
