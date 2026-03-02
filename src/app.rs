@@ -176,17 +176,16 @@ impl App {
 
     fn handle_menu_key_events(&mut self, key_event: KeyEvent) -> color_eyre::Result<()> {
         match self.menu {
-            Menu::Backpack => {
-                if let None = self.backpack_state.selected() {
-                    self.backpack_state.select_first();
-                }
-
-                match key_event.code {
-                    KeyCode::Up => self.backpack_state.select_previous(),
-                    KeyCode::Down => self.backpack_state.select_next(),
-                    _ => {}
-                }
-            }
+            Menu::Backpack => match key_event.code {
+                KeyCode::Up => self.backpack_state.select_previous(),
+                KeyCode::Down => self.backpack_state.select_next(),
+                _ => {}
+            },
+            Menu::Dex => match key_event.code {
+                KeyCode::Up => self.dex_state.select_previous(),
+                KeyCode::Down => self.dex_state.select_next(),
+                _ => {}
+            },
             _ => {}
         }
 

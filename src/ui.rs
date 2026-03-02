@@ -17,12 +17,6 @@ impl Widget for &mut App {
     // - https://docs.rs/ratatui/latest/ratatui/widgets/index.html
     // - https://github.com/ratatui/ratatui/tree/master/examples
     fn render(self, area: Rect, buf: &mut Buffer) {
-        // let block = Block::bordered()
-        //     .title("Fishin'")
-        //     .title_alignment(Alignment::Center)
-        //     .border_type(BorderType::Rounded);
-        //
-        // let inner = block.inner(area);
         let [main, toolbar] = Layout::vertical([Constraint::Fill(1), Constraint::Max(3)])
             .spacing(Spacing::Overlap(1))
             .areas(area);

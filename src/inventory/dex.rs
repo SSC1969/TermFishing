@@ -8,79 +8,106 @@ use std::collections::HashMap;
 use crate::{
     SPECIES,
     inventory::Inventory,
-    items::{
-        Item,
-        fish::{Fish, Species},
-    },
+    items::{Item, ItemTypes, fish::Species},
 };
 
 pub struct Dex {
-    pub items: HashMap<String, DexEntry>,
+    items: HashMap<String, DexEntries>,
+}
+
+impl Dex {
+    pub fn get(&self, name: String) -> Option<&DexEntries> {
+        self.items.get(&name)
+    }
+
+    pub fn get_mut(&mut self, name: String) -> Option<&mut DexEntries> {
+        self.items.get_mut(&name)
+    }
+
+    pub fn get_all(&self) -> Vec<&DexEntries> {
+        self.items.values().collect()
+    }
 }
 
 impl Default for Dex {
     fn default() -> Self {
-        let mut items: HashMap<String, DexEntry<Fish>> = HashMap::new();
-
+        let mut items: HashMap<String, DexEntries> = HashMap::new();
         for spec in SPECIES.iter() {
-            items.insert(
-                spec.name.clone(),
-                DexEntry {
-                    stats: Box::new(FishStats {
-                        species: spec.clone(),
-                        ..Default::default()
-                    }),
-T
-                    ..Default::default()
-                },
-            );
+            items.insert(spec.name.clone(), DexEntries::Fish(FishEntry::new(spec)));
         }
-
         Self { items }
     }
 }
 
-pub struct DexEntry<T> {
-    pub name: String,
-    pub count: u32,
-    pub total_value: i32,
-    pub highest_value: i32,
-    pub stats: Box<dyn ItemStat<It = T>>,
+impl Inventory for Dex {
+    fn add_item(&mut self, item: ItemTypes) {
+        if let Some(entry) = self.get_mut(item.name()) {
+            entry.update(item);
+        }
+    }
+    fn remove_item(&mut self, item: ItemTypes) {
+        self.items.remove(&item.name());
+    }
 }
 
-pub trait ItemStat {
-    type It;
-
-    fn update(&mut self, item: Self::It);
-    fn get_lines(&self) -> Vec<Line>;
+pub trait DexEntry {
+    /// Updates this entry based on the newly passed in item
+    fn update(&mut self, item: ItemTypes);
+    /// Gets the display text for this entry
+    fn get_lines(&'_ self) -> [Line<'_>; 3];
 }
 
-#[derive(Debug)]
-struct FishStats {
-    pub species: Species,
-    pub largest: u32,
-    pub heaviest: u32,
+pub enum DexEntries {
+    Fish(FishEntry),
 }
 
-impl Default for FishStats {
-    fn default() -> Self {
-        FishStats {
-            species: SPECIES[0].clone(),
+impl DexEntry for DexEntries {
+    fn update(&mut self, item: ItemTypes) {
+        match self {
+            DexEntries::Fish(entry) => entry.update(item),
+        }
+    }
+
+    fn get_lines(&'_ self) -> [Line<'_>; 3] {
+        match self {
+            DexEntries::Fish(entry) => entry.get_lines(),
+        }
+    }
+}
+pub struct FishEntry {
+    species: &'static Species,
+    count: u32,
+    total_value: i32,
+    highest_value: i32,
+    largest: u32,
+    heaviest: u32,
+}
+
+impl FishEntry {
+    fn new(species: &'static Species) -> Self {
+        Self {
+            species,
+            count: 0,
+            total_value: 0,
+            highest_value: 0,
             largest: 0,
             heaviest: 0,
         }
     }
 }
 
-impl ItemStat for FishStats {
-    type It = Fish;
-
-    fn update(&mut self, item: Self::It) {
-        self.largest = u32::max(self.largest, item.length);
-        self.heaviest = u32::max(self.heaviest, item.weight);
+impl DexEntry for FishEntry {
+    fn update(&mut self, item: ItemTypes) {
+        if let ItemTypes::Fish(fish) = item {
+            self.count += 1;
+            self.total_value += fish.value();
+            self.highest_value = i32::max(self.highest_value, fish.value());
+            self.largest = u32::max(self.largest, fish.length);
+            self.heaviest = u32::max(self.heaviest, fish.weight);
+        }
     }
 
-    fn get_lines(&self) -> Vec<Line> {
+    fn get_lines(&'_ self) -> [Line<'_>; 3] {
         let l1 = Line::from(vec![
             self.species.icon(),
             " ".into(),
@@ -90,76 +117,24 @@ impl ItemStat for FishStats {
         .underlined();
 
         let l2 = Line::from(vec![
-            format!("Biggest: {}cm | Heaviest: {}g", self.largest, self.heaviest).into(),
+            format!("Caught: {}(${})", self.count, self.total_value,).into(),
         ]);
 
-        vec![l1, l2]
-    }
-}
-
-impl<T: Item> DexEntry<T> {
-    fn add(&mut self, i: T) {
-        self.count += 1;
-        self.total_value += i.value();
-        self.highest_value = i32::max(self.highest_value, i.value());
-        self.stats.update(i);
-    }
-
-    fn remove(&mut self, i: T) {
-        self.count -= 1;
-        self.total_value -= i.value();
-    }
-}
-
-impl<T> Default for DexEntry<T> {
-    fn default() -> Self {
-        DexEntry {
-            name: "???".to_string(),
-            count: 0,
-            total_value: 0,
-            highest_value: 0,
-            stats: Box::new(FishStats::default()),
-        }
-    }
-}
-
-impl<'a> From<&'a DexEntry> for ListItem<'a> {
-    fn from(entry: &'a DexEntry) -> Self {
-        let mut lines = entry.stats.get_lines();
-
-        let l2 = Line::from(vec![
+        let l3 = Line::from(vec![
             format!(
-                "Caught: {} | Most Expensive: ${} | Total Value: ${}",
-                entry.count, entry.highest_value, entry.total_value
+                "Best: {}cm | {}g | ${}",
+                self.largest, self.heaviest, self.highest_value
             )
             .into(),
         ]);
 
-        lines.push(l2);
-
-        ListItem::new(Text::from(lines))
+        [l1, l2, l3]
     }
 }
 
-impl Dex {
-    pub fn search(&self, name: String) -> Option<&DexEntry> {
-        return self.items.get(&name);
-    }
-
-    pub fn get_all(&self) -> Vec<&DexEntry> {
-        self.items.values().collect()
-    }
-}
-
-impl Inventory for Dex {
-    fn add_item(&mut self, i: Box<dyn Item>) {
-        let entry = self.items.entry(i.name()).or_default();
-        entry.add(i);
-    }
-
-    fn remove_item(&mut self, i: Box<dyn Item>) {
-        if let Some(entry) = self.items.get_mut(&i.name()) {
-            entry.remove(i);
-        }
+impl<'a> From<&'a DexEntries> for ListItem<'a> {
+    fn from(entry: &'a DexEntries) -> Self {
+        let [l1, l2, l3] = entry.get_lines();
+        ListItem::new(Text::from(vec![l1, l2, l3]))
     }
 }
