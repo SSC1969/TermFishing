@@ -26,15 +26,30 @@ static BITE_FRAME: &str = r#"
 ／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ `~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
 "#;
 
+// TODO: these two should be two frames of the same animation, instead of different events
 static CATCH_FRAME: &str = r#"
 
 　　　　　　　　　　　　　　　　　　 /,
 　　　　　　　　　　　　　　 　 　,/  \
 　　　　　　　　　　　　　 　 　,/　  ヽ     
 　　　　 　　　　　  ∧＿∧　　,／　　　　ヽ,     _    woah!
-　　　　　 　　　　（ ´∀｀）,／　 　　　　　\_/   ヽ
+　　　　　 　　　　（ ´o｀）,／　 　　　　　\_/   ヽ
 　　　　　　　 　　（　　つつ@　 　　　　 　　　     ヽ _ ,
-　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　　         ヽo--<°))><'
+　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　　         ヽo--
+　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　
+￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　  　
+／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ `~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
+"#;
+
+static CAUGHT_FRAME: &str = r#"
+
+　　　　　　　　　　　　　　　　
+　　　　　　　　　　　　　　 　
+　　　　　　　　　　　　　 　   
+　　　　 　　　　　  ∧＿∧　　
+　　　　　 　　　　（ ´∀｀）             mmm...
+　　　　　　　 　　 （　　_ つ _つ
+　　　 　 　＿＿   ｜ ｜ |　　　 　
 　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　
 ￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　  　
 ／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ `~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
@@ -128,16 +143,6 @@ impl App {
         Widget::render(messages, area, buf);
     }
 
-    fn render_chat(&self, area: Rect, buf: &mut Buffer) {
-        let block = Block::new();
-        let chat = "
-Adam caught [LEGENDARY] Salmon
-Adam: yooooo
-Sam: dub";
-
-        Paragraph::new(chat).block(block).render(area, buf);
-    }
-
     fn render_viewport(&self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
             .title("Fishin'")
@@ -146,13 +151,32 @@ Sam: dub";
             .merge_borders(MergeStrategy::Exact);
 
         let mut frame = DEFAULT_FRAME;
+        let mut icon = Option::None;
+        let mut x = 0;
+        let mut y = 0;
         match self.anim {
             Anim::DEFAULT => frame = DEFAULT_FRAME,
             Anim::BITING => frame = BITE_FRAME,
-            Anim::CATCHING => frame = CATCH_FRAME,
+            Anim::CATCHING => {
+                frame = CATCH_FRAME;
+                icon = self.recent_catch.clone();
+                x = area.x + 63;
+                y = area.y + 9;
+            }
+            Anim::CAUGHT => {
+                frame = CAUGHT_FRAME;
+                icon = self.recent_catch.clone();
+                x = area.x + 31;
+                y = area.y + 7;
+            }
         };
 
         Paragraph::new(frame).block(block).render(area, buf);
+
+        if icon.is_some() {
+            let span = icon.unwrap();
+            buf.set_span(x, y, &span, span.width() as u16);
+        }
     }
 
     fn render_toolbar(&self, area: Rect, buf: &mut Buffer) {

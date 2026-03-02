@@ -12,7 +12,7 @@ pub trait Item: DynEq + DynClone {
     fn name(&self) -> String;
     fn value(&self) -> i32;
     fn info(&self) -> String;
-    fn icon(&self) -> Span<'_>;
+    fn icon(&self) -> Span<'static>;
 }
 dyn_eq::eq_trait_object!(Item);
 dyn_clone::clone_trait_object!(Item);

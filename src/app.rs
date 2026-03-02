@@ -6,7 +6,7 @@ use crate::{
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use rand::{Rng, RngExt};
-use ratatui::{DefaultTerminal, widgets::ListState};
+use ratatui::{DefaultTerminal, text::Span, widgets::ListState};
 use tokio::{sync::mpsc::Sender, time::sleep};
 use tui_input::{Input, backend::crossterm::EventHandler as crosstermEventHandler};
 
@@ -45,6 +45,7 @@ pub enum Anim {
     DEFAULT,
     BITING,
     CATCHING,
+    CAUGHT,
 }
 /// Application.
 pub struct App {
@@ -69,6 +70,8 @@ pub struct App {
     pub cursor_position: Option<(u16, u16)>,
 
     pub anim: Anim,
+
+    pub recent_catch: Option<Span<'static>>,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -93,6 +96,7 @@ impl App {
             messages: Vec::new(),
             cursor_position: Option::Some((0, 0)),
             anim: Anim::DEFAULT,
+            recent_catch: Option::None,
         }
     }
 
@@ -123,6 +127,9 @@ impl App {
                         NavigationDirection::Right => self.menu = self.menu.next(),
                         _ => {}
                     },
+                    AppEvent::ResetFishing => {
+                        self.anim = Anim::DEFAULT;
+                    }
                     AppEvent::FishBiting => {
                         self.anim = Anim::BITING;
                         self.events.send(AppEvent::SendChat("biting...".to_owned()));
@@ -133,6 +140,8 @@ impl App {
                         // });
                     }
                     AppEvent::FishCatching => {
+                        let icon = self.player.catch_fish();
+                        self.recent_catch = Some(icon);
                         self.anim = Anim::CATCHING;
                         let tx = self.events.sender();
                         tokio::spawn(async move {
@@ -141,8 +150,14 @@ impl App {
                         });
                     }
                     AppEvent::FishCaught => {
-                        self.player.catch_fish();
-                        self.anim = Anim::DEFAULT;
+                        // let icon = self.player.catch_fish();
+                        self.anim = Anim::CAUGHT;
+                        // self.recent_catch = Some(icon);
+                        let tx = self.events.sender();
+                        tokio::spawn(async move {
+                            sleep(Duration::from_millis(2000)).await;
+                            tx.send(Event::App(AppEvent::ResetFishing));
+                        });
                     }
                     AppEvent::ChangeInputMode(im) => match im {
                         InputMode::Normal => self.input_mode = im,

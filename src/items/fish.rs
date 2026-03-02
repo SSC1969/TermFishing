@@ -82,7 +82,7 @@ impl Item for Fish {
         format!("{}g | {}cm - {:?}", self.weight, self.length, self.quality)
     }
 
-    fn icon(&self) -> Span<'_> {
+    fn icon(&self) -> Span<'static> {
         Span::styled(
             self.species.icon.clone(),
             Style::default().fg(self.species.colour),
