@@ -1,13 +1,79 @@
+static DEFAULT_FRAME: &str = r#"
+
+　　　　　　　　　　　　　　　　　　　 ,
+　　　　　　　　　　　　　　 　 　　,／ヽ
+　　　　　　　　　　　　　 　 　 ,／　　　ヽ
+　　　　 　　　　　  ∧＿∧　　 ,／　　　　　　ヽ
+　　　　　 　　　　（ ´w｀）,／　 　　　　　　 ヽ
+　　　　　　　 　　（　　つつ@　 　　　　 　　　　ヽ
+　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　　　  ヽ
+　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　　ヽ
+￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　   　o
+／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ ~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
+"#;
+
+static BITE_FRAME: &str = r#"
+
+　　　　　　　　　　　　　　　　　　　 ,
+　　　　　　　　　　　　　　 　 　　 ,／ヽ
+　　　　　　　　　　　　　 　 　  ,／　　\
+　　　　 　　　　　  ∧＿∧　　 ,／　　　　ヽ        got a bite!
+　　　　　 　　　　（ `o｀）,／　 　　　　ヽ
+　　　　　　　 　　（　　つつ@　 　　　　 　ヽ
+　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　ヽ
+　　　　　　|――|　（_＿）＿）　　　　 　　 　　ヽ
+￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　` \' 　
+／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ `~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
+"#;
+
+// TODO: these two should be two frames of the same animation, instead of different events
+static CATCH_FRAME: &str = r#"
+
+　　　　　　　　　　　　　　　　　　 /,
+　　　　　　　　　　　　　　 　 　,/  \
+　　　　　　　　　　　　　 　 　,/　  ヽ     
+　　　　 　　　　　  ∧＿∧　　,／　　　　ヽ,     _    woah!
+　　　　　 　　　　（ ´o｀）,／　 　　　　　\_/   ヽ
+　　　　　　　 　　（　　つつ@　 　　　　 　　　     ヽ _ ,
+　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　　         ヽo--
+　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　
+￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　  　
+／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ `~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
+"#;
+
+static CAUGHT_FRAME: &str = r#"
+
+　　　　　　　　　　　　　　　　
+　　　　　　　　　　　　　　 　
+　　　　　　　　　　　　　 　   
+　　　　 　　　　　  ∧＿∧　　
+　　　　　 　　　　（ ´∀｀）             mmm...
+　　　　　　　 　　 （　　_ つ _つ
+　　　 　 　＿＿   ｜ ｜ |　　　 　
+　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　
+￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　  　
+／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ `~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
+"#;
+
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Flex, Layout, Rect, Spacing},
     style::{Color, Style},
     symbols::merge::MergeStrategy,
     text::Line,
-    widgets::{Block, BorderType, List, ListItem, Padding, Paragraph, StatefulWidget, Widget},
+    widgets::{
+        Block, BorderType, List, ListItem, ListState, Padding, Paragraph, StatefulWidget, Widget,
+    },
 };
 
-use crate::app::{App, InputMode, MENU_SIZE, Menu};
+use crate::{
+    app::{Anim, App, InputMode, MENU_SIZE, Menu},
+    items::Item,
+};
+struct ItemList {
+    items: Vec<Box<dyn Item>>,
+    state: ListState,
+}
 
 impl Widget for &mut App {
     /// Renders the user interface widgets.
@@ -71,16 +137,6 @@ impl App {
         Widget::render(messages, area, buf);
     }
 
-    fn render_chat(&self, area: Rect, buf: &mut Buffer) {
-        let block = Block::new();
-        let chat = "
-Adam caught [LEGENDARY] Salmon
-Adam: yooooo
-Sam: dub";
-
-        Paragraph::new(chat).block(block).render(area, buf);
-    }
-
     fn render_viewport(&self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
             .title("Fishin'")
@@ -88,35 +144,33 @@ Sam: dub";
             .border_type(BorderType::Rounded)
             .merge_borders(MergeStrategy::Exact);
 
-        let _cat = r#"
-　　 　　  　　, -ｰ,
-　　　　　　 ／　　 |
-　　 ∧∧　　／　　　 |
-　　(*ﾟ－ﾟ)／.　 　 |
-　　 |　つ'@　　 　 |
-　 ～＿`)｀).　  　 |
-￣￣￣しU　　　　 　 |
-　　　　　|　 　　　 |
-～～～～～～～～～～～～
-"#;
+        let mut frame = DEFAULT_FRAME;
+        let mut icon = Option::None;
+        let mut x = 0;
+        let mut y = 0;
+        match self.anim {
+            Anim::DEFAULT => frame = DEFAULT_FRAME,
+            Anim::BITING => frame = BITE_FRAME,
+            Anim::CATCHING => {
+                frame = CATCH_FRAME;
+                icon = self.recent_catch.clone();
+                x = area.x + 63;
+                y = area.y + 9;
+            }
+            Anim::CAUGHT => {
+                frame = CAUGHT_FRAME;
+                icon = self.recent_catch.clone();
+                x = area.x + 31;
+                y = area.y + 7;
+            }
+        };
 
-        let cat2 = r#"
+        Paragraph::new(frame).block(block).render(area, buf);
 
-　　　　　　　　　　　　　　　　　　　 ,
-　　　　　　　　　　　　　　 　 　　,／ヽ
-　　　　　　　　　　　　　 　 　 ,／　　　ヽ
-　　　　 　　　　　  ∧＿∧　　,／　　　　　　ヽ
-　　　　　 　　　　（ ´∀｀）,／　 　　　　　　 ヽ
-　　　　　　　 　　（　　つつ@　 　　　　 　　　　ヽ
-　　　 　 　＿＿   ｜ ｜ |　　　 　　　　 　　　　  ヽ
-　　　　　　|――|　（_＿）＿）　　　　 　　 　　　　　　ヽ
-￣￣￣￣￣￣￣￣￣￣￣￣|　　　　　　　　 　　　 　   　o
-／⌒＼／⌒＼／⌒＼／⌒＼|彡~ﾟ　゜~ ~。゜　~ ~　~ ~~　~ ~ ~ ~　~ ~　~ ~~　~゜~ ~。゜　~ ~　~ ~~　~゜~ ~。゜
-"#;
-        Paragraph::new(cat2)
-            // .centered()
-            .block(block)
-            .render(area, buf);
+        if icon.is_some() {
+            let span = icon.unwrap();
+            buf.set_span(x, y, &span, span.width() as u16);
+        }
     }
 
     fn render_toolbar(&self, area: Rect, buf: &mut Buffer) {

@@ -1,3 +1,5 @@
+use ratatui::text::Span;
+
 use crate::inventory::Inventory;
 use crate::inventory::{backpack::Backpack, dex::Dex};
 use crate::items::ItemTypes;
@@ -10,10 +12,12 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn catch_fish(&mut self) {
+    pub fn catch_fish(&mut self) -> Span<'static> {
         let fish = Fish::generate();
         self.backpack.add_item(ItemTypes::Fish(fish.clone()));
         self.dex.add_item(ItemTypes::Fish(fish));
+        let icon = fish.icon();
+        return icon;
     }
 }
 
