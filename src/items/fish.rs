@@ -15,7 +15,8 @@ use strum::{EnumIter, EnumProperty, IntoEnumIterator, VariantArray};
 
 use crate::{SPECIES, items::Item};
 
-#[derive(Default, Eq, Hash, PartialEq, Clone, Debug)]
+//TODO: convert from u32 to float
+#[derive(Default, Eq, PartialEq, Clone, Debug)]
 pub struct Fish {
     pub species: Species,
     pub length: u32,
@@ -83,10 +84,7 @@ impl Item for Fish {
     }
 
     fn icon(&self) -> Span<'_> {
-        Span::styled(
-            self.species.icon.clone(),
-            Style::default().fg(self.species.colour),
-        )
+        self.species.icon()
     }
 }
 
@@ -131,15 +129,21 @@ impl SpeciesRarity {
 
 #[derive(PartialEq, Eq, Deserialize, Default, Debug, Hash, Clone)]
 pub struct Species {
-    name: String,
-    base_value: u32,
-    min_len: u32,
-    max_len: u32,
-    min_weight: u32,
-    max_weight: u32,
-    icon: String,
-    colour: Color,
-    rarity: SpeciesRarity,
+    pub name: String,
+    pub base_value: u32,
+    pub min_len: u32,
+    pub max_len: u32,
+    pub min_weight: u32,
+    pub max_weight: u32,
+    pub icon: String,
+    pub colour: Color,
+    pub rarity: SpeciesRarity,
+}
+
+impl Species {
+    pub fn icon(&self) -> Span<'_> {
+        Span::styled(self.icon.clone(), Style::default().fg(self.colour))
+    }
 }
 
 pub fn read_species_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Species>, Box<dyn Error>> {

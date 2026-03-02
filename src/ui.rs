@@ -1,7 +1,7 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Flex, Layout, Rect, Spacing},
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     symbols::merge::MergeStrategy,
     text::Line,
     widgets::{Block, BorderType, List, ListItem, Padding, Paragraph, StatefulWidget, Widget},
@@ -138,9 +138,7 @@ Sam: dub";
 
         Line::from("<h> Home").centered().render(layout[0], buf);
         Line::from("<b> Backpack").centered().render(layout[1], buf);
-        Line::from("<c> Collection")
-            .centered()
-            .render(layout[2], buf);
+        Line::from("<d> Dex").centered().render(layout[2], buf);
         Line::from("<o> Options").centered().render(layout[3], buf);
 
         block.render(area, buf);
@@ -173,10 +171,18 @@ Sam: dub";
                     .block(block);
                 StatefulWidget::render(list, area, buf, &mut self.backpack_state);
             }
-            Menu::Collection => Paragraph::new("Collection")
-                .centered()
-                .block(block)
-                .render(area, buf),
+            Menu::Dex => {
+                let list_items = self
+                    .player
+                    .dex
+                    .get_all()
+                    .into_iter()
+                    .map(|entry| ListItem::from(entry));
+                let list = List::new(list_items)
+                    .highlight_style(Style::new().reversed())
+                    .block(block);
+                StatefulWidget::render(list, area, buf, &mut self.dex_state);
+            }
             Menu::Options => Paragraph::new("Options")
                 .centered()
                 .block(block)

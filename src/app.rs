@@ -12,7 +12,7 @@ pub enum Menu {
     #[default]
     Home,
     Backpack,
-    Collection,
+    Dex,
     Options,
 }
 
@@ -22,8 +22,8 @@ impl Menu {
     fn next(&self) -> Self {
         match self {
             Menu::Home => Menu::Backpack,
-            Menu::Backpack => Menu::Collection,
-            Menu::Collection => Menu::Options,
+            Menu::Backpack => Menu::Dex,
+            Menu::Dex => Menu::Options,
             Menu::Options => Menu::Home,
         }
     }
@@ -32,8 +32,8 @@ impl Menu {
         match self {
             Menu::Home => Menu::Options,
             Menu::Backpack => Menu::Home,
-            Menu::Collection => Menu::Backpack,
-            Menu::Options => Menu::Collection,
+            Menu::Dex => Menu::Backpack,
+            Menu::Options => Menu::Dex,
         }
     }
 }
@@ -51,6 +51,8 @@ pub struct App {
     pub player: Player,
     /// Backpack state for ui
     pub backpack_state: ListState,
+    /// Dex state for ui
+    pub dex_state: ListState,
 
     pub input: Input,
     // Whether the chatbox is open or not
@@ -78,6 +80,7 @@ impl App {
             menu: Menu::default(),
             player: Player::default(),
             backpack_state: ListState::default(),
+            dex_state: ListState::default(),
             input: Input::new(std::string::String::from("")),
             input_mode: InputMode::Normal,
             messages: Vec::new(),
@@ -161,7 +164,7 @@ impl App {
                 .events
                 .send(AppEvent::ChangeInputMode(InputMode::Editing)),
             KeyCode::Char('h') => self.events.send(AppEvent::ChangeMenu(Menu::Home)),
-            KeyCode::Char('c') => self.events.send(AppEvent::ChangeMenu(Menu::Collection)),
+            KeyCode::Char('d') => self.events.send(AppEvent::ChangeMenu(Menu::Dex)),
             KeyCode::Char('b') => self.events.send(AppEvent::ChangeMenu(Menu::Backpack)),
             KeyCode::Char('o') => self.events.send(AppEvent::ChangeMenu(Menu::Options)),
 
