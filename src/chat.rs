@@ -1,4 +1,4 @@
-use futures::stream::StreamExt;
+use futures::{channel::mpsc, stream::StreamExt};
 use libp2p::{
     gossipsub, mdns, noise,
     swarm::{NetworkBehaviour, SwarmEvent},
@@ -38,32 +38,10 @@ struct Message {
     message: String,
 }
 
-// async fn chat() -> Result<(), Box<dyn Error>> {
-//     // read full lines from stdin
-
-//     let mut user_info = UserInfo::default();
-
-//     loop {
-//         println!("Enter your name:");
-
-//         let mut stdin = io::BufReader::new(io::stdin()).lines();
-
-//         let line = stdin.next_line().await?;
-
-//         match line {
-//             Some(name) => {
-//                 println!("Your name is '{name}'. Searching for connection...");
-//                 user_info.name = name;
-//                 break;
-//             }
-//             _ => {
-//                 println!("Invalid name! Try again:");
-//             }
-//         }
-//     }
-
-//     create_and_connect(user_info).await
-// }
+pub struct ChatHandler {
+    sender: mpsc::UnboundedSender<Message>,
+    receiver: mpsc::UnboundedReceiver<Message>,
+}
 
 pub async fn create_and_connect(
     user_name: String,

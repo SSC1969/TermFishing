@@ -2,22 +2,26 @@ use ratatui::text::Span;
 
 use crate::inventory::Inventory;
 use crate::inventory::{backpack::Backpack, dex::Dex};
-use crate::items::ItemTypes;
 use crate::items::fish::Fish;
+use crate::items::{Item, ItemTypes};
 
 #[derive(Default)]
 pub struct Player {
+    pub name: String,
     pub backpack: Backpack,
     pub dex: Dex,
+
+    pub time_of_last_catch: u32,
+    pub ticks_until_next_bite: u32,
 }
 
 impl Player {
-    pub fn catch_fish(&mut self) -> Span<'static> {
+    pub fn catch_fish(&mut self) -> Span {
         let fish = Fish::generate();
         self.backpack.add_item(ItemTypes::Fish(fish.clone()));
-        self.dex.add_item(ItemTypes::Fish(fish));
-        let icon = fish.icon();
-        return icon;
+        self.dex.add_item(ItemTypes::Fish(fish.clone()));
+
+        fish.icon()
     }
 }
 

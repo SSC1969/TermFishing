@@ -7,7 +7,10 @@ use crate::{
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use rand::{Rng, RngExt};
 use ratatui::{DefaultTerminal, text::Span, widgets::ListState};
-use tokio::{sync::mpsc::Sender, time::sleep};
+use tokio::{
+    sync::mpsc::{self, Sender},
+    time::sleep,
+};
 use tui_input::{Input, backend::crossterm::EventHandler as crosstermEventHandler};
 
 #[derive(Clone, Default, Debug)]
@@ -49,7 +52,7 @@ pub enum Anim {
 }
 /// Application.
 pub struct App {
-    pub tx: Sender<String>,
+    pub chat_tx: Sender<String>,
     /// Is the application running?
     pub running: bool,
     /// Event handler.
@@ -70,9 +73,7 @@ pub struct App {
     pub messages: Vec<String>,
 
     pub cursor_position: Option<(u16, u16)>,
-
     pub anim: Anim,
-
     pub recent_catch: Option<Span<'static>>,
 }
 
@@ -85,7 +86,9 @@ pub enum InputMode {
 
 impl App {
     /// Constructs a new instance of [`App`].
-    pub fn new(tx: Sender<String>) -> Self {
+    pub fn new() -> Self {
+        let (chat_tx, chat_rx) = mpsc::channel(32);
+
         Self {
             tx: tx,
             running: true,
@@ -95,7 +98,7 @@ impl App {
             backpack_state: ListState::default(),
             dex_state: ListState::default(),
             input: Input::new(std::string::String::from("")),
-            input_mode: InputMode::Normal,
+            input_mode: InputMode::Editing,
             messages: Vec::new(),
             cursor_position: Option::Some((0, 0)),
             anim: Anim::DEFAULT,
@@ -106,12 +109,7 @@ impl App {
     /// Run the application's main loop.
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while self.running {
-            terminal.draw(|frame| {
-                frame.render_widget(&mut self, frame.area());
-                if let Some(pos) = self.cursor_position {
-                    frame.set_cursor_position(pos);
-                }
-            })?;
+            terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
             match self.events.next().await? {
                 Event::Tick => self.tick(),
                 Event::Crossterm(event) => match event {
@@ -166,6 +164,9 @@ impl App {
                         InputMode::Normal => self.input_mode = im,
                         InputMode::Editing => self.input_mode = im,
                     },
+                    AppEvent::ChangePlayerName(name) => {
+                        self.player.name = name;
+                    }
                     AppEvent::SendChat(msg) => self.tx.send(msg).await?,
                     AppEvent::MessageReceived(msg) => self.messages.push(msg),
                 },
@@ -179,10 +180,16 @@ impl App {
         if self.input_mode == InputMode::Editing {
             match key_event.code {
                 KeyCode::Enter => {
-                    let msg = self.input.value().to_owned();
+                    let msg = self.input.value().to_string();
                     self.input.reset();
-                    self.messages.push(msg.clone());
-                    self.events.send(AppEvent::SendChat(msg));
+                    if self.player.name == "" {
+                        self.events.send(AppEvent::ChangePlayerName(msg));
+                        self.events
+                            .send(AppEvent::ChangeInputMode(InputMode::Normal));
+                    } else {
+                        self.messages.push(msg.clone());
+                        self.events.send(AppEvent::SendChat(msg));
+                    }
                 }
                 KeyCode::Esc => self
                     .events
@@ -247,8 +254,7 @@ impl App {
     /// needs to be updated at a fixed frame rate. E.g. polling a server, updating an animation.
     pub fn tick(&mut self) {
         if matches!(self.anim, Anim::DEFAULT) {
-            let mut rng = rand::rng();
-            if rng.random_range(0..300) == 1 {
+            if self.player.ticks_until_next_bite == 0 {
                 self.events.send(AppEvent::FishBiting);
             }
         }

@@ -17,7 +17,7 @@ pub trait Item {
     fn name(&self) -> String;
     fn value(&self) -> i32;
     fn info(&self) -> String;
-    fn icon(&self) -> Span<'static>;
+    fn icon(&self) -> Span;
 }
 
 impl<'a> From<&'a ItemTypes> for ListItem<'a> {
@@ -38,7 +38,7 @@ impl Item for ItemTypes {
             ItemTypes::Fish(fish) => fish.name(),
         }
     }
-    fn icon(&self) -> Span<'_> {
+    fn icon(&self) -> Span {
         match self {
             ItemTypes::Fish(fish) => fish.icon(),
         }

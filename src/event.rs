@@ -55,6 +55,7 @@ pub enum AppEvent {
     FishCatching,
     FishCaught,
 
+    ChangePlayerName(String),
     ChangeInputMode(InputMode),
 
     SendChat(String),

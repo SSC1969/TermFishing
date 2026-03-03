@@ -105,10 +105,28 @@ impl Widget for &mut App {
         self.render_toolbar(toolbar, buf);
         self.render_messages(messages, buf);
         self.render_input(input, buf);
+
+        if self.player.name == "" {
+            self.show_name_prompt(area, buf)
+        };
     }
 }
 
 impl App {
+    fn show_name_prompt(&mut self, area: Rect, buf: &mut Buffer) {
+        let popup_area = Rect {
+            x: area.width / 4,
+            y: area.height / 3,
+            width: area.width / 2,
+            height: area.height / 3,
+        };
+        let block = Block::bordered()
+            .title("What's your name?")
+            .border_type(BorderType::Rounded);
+
+        let input = Paragraph::new(self.input.value()).block(block);
+    }
+
     // move to bottom of impl
     fn render_input(&mut self, area: Rect, buf: &mut Buffer) {
         let width = area.width.max(3) - 3;
