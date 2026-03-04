@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/SSC1969/TermFishing/compare/v0.1.1...v0.1.2) - 2026-03-04
+
+### Fixed
+
+- actually properly fixed token generating step in release workflow
+- properly added workflow token generating step to release
+
 ## [0.1.1](https://github.com/SSC1969/TermFishing/compare/v0.1.0...v0.1.1) - 2026-03-04
 
 ### Other
