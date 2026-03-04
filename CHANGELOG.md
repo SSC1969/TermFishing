@@ -17,6 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Other
 
 - release v0.1.2
+- release v0.1.2
+- Downgrade version from 0.1.3 to 0.1.2
+- release v0.1.3
+- Rename binary from 'my-bin' to 'TermFishing'
+- release v0.1.2
+
+## [0.1.2](https://github.com/SSC1969/TermFishing/compare/v0.1.1...v0.1.2) - 2026-03-04
+
+### Fixed
+
+- actually properly fixed token generating step in release workflow
+- properly added workflow token generating step to release
+
+### Other
+
+- release v0.1.2
 - Downgrade version from 0.1.3 to 0.1.2
 - release v0.1.3
 - Rename binary from 'my-bin' to 'TermFishing'
