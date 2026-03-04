@@ -26,8 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename binary from 'my-bin' to 'TermFishing'
 - release v0.1.2
 
-
-## [0.1.1](https://github.com/SSC1969/TermFishing/compare/v0.1.0...v0.1.1) - 2026-03-04
+## [0.1.1](https://github.com/SSC1969/TermFishing/compare/mm-submission...v0.1.1) - 2026-03-04
 
 ### Other
 
@@ -36,11 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - added app to allow generating secret keys so cd workflow can be triggered by release-plz
 - added cd workflow to run after release-plz published a release
 - added (properly working) release-plz workflow
-
-## [0.9.0](https://github.com/SSC1969/Mountain-Madness-2026/releases/tag/v0.9.0) - 2026-03-04
-
-### Other
-
 - Updated package metadata
 - Added machete to the toolchain, and used it to find and remove unused dependencies (cargo machete --with-metadata)
 - Moved chat methods into seperate handler to run on it's own thread more easily, encapsulated all player state management into player.rs, replaced rushed code with marginally better code
@@ -48,6 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Merge branch 'main' into collection
 - Updated items to use an enum-based implementation, and added proper functionality to the collection
 - Started completion of collection/dex
+
+## [Mountain Madness Submission] - 2026-03-01
+
+### Other
+
 - Added navigation to the backpack menu
 - Updated inventory UI
 - Fixed warnings
