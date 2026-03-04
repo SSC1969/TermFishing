@@ -28,3 +28,14 @@ strum = { version = "0.28.0", features = ["derive"] }
 tokio = { version = "1.49.0", features = ["full"] }
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 tui-input = "0.15.0"
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true
+
