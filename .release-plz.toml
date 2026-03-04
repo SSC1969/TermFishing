@@ -1,0 +1,2 @@
+[workspace]
+publish = false # don't publish (i.e. run cargo publish)
