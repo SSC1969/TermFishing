@@ -6,16 +6,7 @@ pub mod items;
 pub mod player;
 pub mod ui;
 
-use crate::{
-    app::App,
-    items::fish::{Species, read_species_from_file},
-};
-use std::sync::LazyLock;
-
-static SPECIES: LazyLock<Vec<Species>> = LazyLock::new(|| {
-    read_species_from_file("src/items/species.json").expect("failed to load species.json")
-});
-
+use crate::app::App;
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;

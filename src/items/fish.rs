@@ -1,7 +1,4 @@
-use std::error::Error;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
+use std::sync::LazyLock;
 
 use rand::RngExt;
 use rand_distr::Distribution;
@@ -13,7 +10,14 @@ use ratatui::{
 use serde::Deserialize;
 use strum::{EnumIter, EnumProperty, IntoEnumIterator, VariantArray};
 
-use crate::{SPECIES, items::Item};
+use crate::items::Item;
+
+// include the species .json file in the compiled binary
+const SPECIES_JSON: &str = include_str!("species.json");
+
+pub static SPECIES: LazyLock<Vec<Species>> = LazyLock::new({
+    || serde_json::from_str(&SPECIES_JSON).expect("Error deserializing species!")
+});
 
 //TODO: convert from u32 to float
 #[derive(Default, Eq, PartialEq, Clone, Debug)]
@@ -146,44 +150,33 @@ impl Species {
     }
 }
 
-pub fn read_species_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Species>, Box<dyn Error>> {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-
-    let species: Vec<Species> = serde_json::from_reader(reader)?;
-
-    Ok(species)
-}
-
 #[cfg(test)]
 mod tests {
 
     use super::*;
 
-    #[test]
-    fn test_load_species() {
-        let species = read_species_from_file("src/items/species.json");
-        assert!(species.is_ok());
+    // #[test]
+    // fn test_load_species() {
+    //     assert!(species.is_ok());
 
-        let species = species.unwrap();
+    //     let species = species.unwrap();
 
-        println!("{} species read\n", species.len());
-        for s in &species {
-            println!(
-                "{}: icon {} len {}–{}cm, weight {}–{}kg, {:?}, {:?}",
-                s.name,
-                s.icon,
-                s.min_len,
-                s.max_len,
-                s.min_weight,
-                s.max_weight,
-                s.rarity,
-                s.colour
-            );
-        }
-        println!("");
-    }
-
+    //     println!("{} species read\n", species.len());
+    //     for s in &species {
+    //         println!(
+    //             "{}: icon {} len {}–{}cm, weight {}–{}kg, {:?}, {:?}",
+    //             s.name,
+    //             s.icon,
+    //             s.min_len,
+    //             s.max_len,
+    //             s.min_weight,
+    //             s.max_weight,
+    //             s.rarity,
+    //             s.colour
+    //         );
+    //     }
+    //     println!("");
+    // }
     #[test]
     fn test_generate_fish() {
         for _ in 0..10 {

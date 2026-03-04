@@ -6,9 +6,11 @@ use ratatui::{
 use std::collections::HashMap;
 
 use crate::{
-    SPECIES,
     inventory::Inventory,
-    items::{Item, ItemTypes, fish::Species},
+    items::{
+        Item, ItemTypes,
+        fish::{SPECIES, Species},
+    },
 };
 
 pub struct Dex {
