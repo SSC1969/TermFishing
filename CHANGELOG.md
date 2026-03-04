@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1](https://github.com/SSC1969/TermFishing/compare/v0.9.0...v0.9.1) - 2026-03-04
+
+### Other
+
+- added app to allow generating secret keys so cd workflow can be triggered by release-plz
+- added cd workflow to run after release-plz published a release
+- added (properly working) release-plz workflow
+
 ## [0.9.0](https://github.com/SSC1969/Mountain-Madness-2026/releases/tag/v0.9.0) - 2026-03-04
 
 ### Other
