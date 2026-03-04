@@ -14,7 +14,7 @@ jobs:
     if: ${{ github.repository_owner == 'SSC1969' }}
     permissions:
       contents: write
-      token-id: write
+      id-token: write
     steps:
       - &checkout
         name: Checkout repository
