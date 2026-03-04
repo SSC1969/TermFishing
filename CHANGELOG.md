@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/SSC1969/TermFishing/compare/v0.1.1...v0.1.2) - 2026-03-04
+
+### Other
+
+- release v0.1.1
+- Fix id-token permission in release workflow
+- Reset version to 0.1.0
+- added app to allow generating secret keys so cd workflow can be triggered by release-plz
+- added cd workflow to run after release-plz published a release
+- added (properly working) release-plz workflow
+
 ## [0.1.1](https://github.com/SSC1969/TermFishing/compare/v0.1.0...v0.1.1) - 2026-03-04
 
 ### Other
