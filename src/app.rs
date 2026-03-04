@@ -1,16 +1,11 @@
-use std::time::Duration;
-
 use crate::{
+    chat::ChatHandler,
     event::{AppEvent, Event, EventHandler, NavigationDirection},
-    player::Player,
+    items::fish::Fish,
+    player::{FishingState, Player},
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use rand::{Rng, RngExt};
-use ratatui::{DefaultTerminal, text::Span, widgets::ListState};
-use tokio::{
-    sync::mpsc::{self, Sender},
-    time::sleep,
-};
+use ratatui::{DefaultTerminal, widgets::ListState};
 use tui_input::{Input, backend::crossterm::EventHandler as crosstermEventHandler};
 
 #[derive(Clone, Default, Debug)]
@@ -52,11 +47,12 @@ pub enum Anim {
 }
 /// Application.
 pub struct App {
-    pub chat_tx: Sender<String>,
     /// Is the application running?
     pub running: bool,
     /// Event handler.
     pub events: EventHandler,
+    /// Chat handler
+    pub chat: ChatHandler,
     /// Currently open menu
     pub menu: Menu,
     /// Player data struct
@@ -74,7 +70,7 @@ pub struct App {
 
     pub cursor_position: Option<(u16, u16)>,
     pub anim: Anim,
-    pub recent_catch: Option<Span<'static>>,
+    pub recent_catch: Option<Fish>,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -87,12 +83,13 @@ pub enum InputMode {
 impl App {
     /// Constructs a new instance of [`App`].
     pub fn new() -> Self {
-        let (chat_tx, chat_rx) = mpsc::channel(32);
+        let events = EventHandler::new();
+        let event_tx = events.sender();
 
         Self {
-            tx: tx,
             running: true,
-            events: EventHandler::new(),
+            events,
+            chat: ChatHandler::new(event_tx),
             menu: Menu::default(),
             player: Player::default(),
             backpack_state: ListState::default(),
@@ -110,67 +107,55 @@ impl App {
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while self.running {
             terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
-            match self.events.next().await? {
-                Event::Tick => self.tick(),
-                Event::Crossterm(event) => match event {
-                    crossterm::event::Event::Key(key_event)
-                        if key_event.kind == crossterm::event::KeyEventKind::Press =>
-                    {
-                        self.handle_key_events(key_event)?
-                    }
+            self.handle_events().await?;
+        }
+        Ok(())
+    }
+
+    pub async fn handle_events(&mut self) -> color_eyre::Result<()> {
+        match self.events.next().await? {
+            Event::Tick => self.tick(),
+            Event::Crossterm(event) => match event {
+                crossterm::event::Event::Key(key_event)
+                    if key_event.kind == crossterm::event::KeyEventKind::Press =>
+                {
+                    self.handle_key_events(key_event)?
+                }
+                _ => {}
+            },
+            Event::App(app_event) => match app_event {
+                AppEvent::Quit => self.quit(),
+                AppEvent::ChangeMenu(menu) => self.menu = menu,
+                AppEvent::Navigate(dir) => match dir {
+                    NavigationDirection::Left => self.menu = self.menu.prev(),
+                    NavigationDirection::Right => self.menu = self.menu.next(),
                     _ => {}
                 },
-                Event::App(app_event) => match app_event {
-                    AppEvent::Quit => self.quit(),
-                    AppEvent::ChangeMenu(menu) => self.menu = menu,
-                    AppEvent::Navigate(dir) => match dir {
-                        NavigationDirection::Left => self.menu = self.menu.prev(),
-                        NavigationDirection::Right => self.menu = self.menu.next(),
-                        _ => {}
-                    },
-                    AppEvent::ResetFishing => {
-                        self.anim = Anim::DEFAULT;
-                    }
-                    AppEvent::FishBiting => {
-                        self.anim = Anim::BITING;
-                        self.events.send(AppEvent::SendChat("biting...".to_owned()));
-                        // let tx = self.events.sender();
-                        // tokio::spawn(async move {
-                        //     sleep(Duration::from_millis(1000)).await;
-                        //     tx.send(Event::App(AppEvent::FishCatching));
-                        // });
-                    }
-                    AppEvent::FishCatching => {
-                        let icon = self.player.catch_fish();
-                        self.recent_catch = Some(icon);
-                        self.anim = Anim::CATCHING;
-                        let tx = self.events.sender();
-                        tokio::spawn(async move {
-                            sleep(Duration::from_millis(2000)).await;
-                            tx.send(Event::App(AppEvent::FishCaught));
-                        });
-                    }
-                    AppEvent::FishCaught => {
-                        // let icon = self.player.catch_fish();
-                        self.anim = Anim::CAUGHT;
-                        // self.recent_catch = Some(icon);
-                        let tx = self.events.sender();
-                        tokio::spawn(async move {
-                            sleep(Duration::from_millis(2000)).await;
-                            tx.send(Event::App(AppEvent::ResetFishing));
-                        });
-                    }
-                    AppEvent::ChangeInputMode(im) => match im {
-                        InputMode::Normal => self.input_mode = im,
-                        InputMode::Editing => self.input_mode = im,
-                    },
-                    AppEvent::ChangePlayerName(name) => {
-                        self.player.name = name;
-                    }
-                    AppEvent::SendChat(msg) => self.tx.send(msg).await?,
-                    AppEvent::MessageReceived(msg) => self.messages.push(msg),
+                AppEvent::CastRod => {
+                    self.player.cast_rod();
+                }
+                AppEvent::FishBiting => {
+                    self.player.bite();
+                    self.events.send(AppEvent::SendChat("biting...".to_owned()));
+                }
+                AppEvent::FishCatching => {
+                    // this updates the player state as well as getting the caught fish's icon
+                    self.recent_catch = Some(self.player.catch_fish());
+                }
+                AppEvent::FishCaught => {
+                    self.player.post_catch();
+                }
+                AppEvent::ChangeInputMode(im) => match im {
+                    InputMode::Normal => self.input_mode = im,
+                    InputMode::Editing => self.input_mode = im,
                 },
-            }
+                AppEvent::ChangePlayerName(name) => {
+                    self.player.name = name.clone();
+                    self.chat.update_name(name);
+                }
+                AppEvent::SendChat(msg) => self.chat.send(msg),
+                AppEvent::MessageReceived(msg) => self.messages.push(msg),
+            },
         }
         Ok(())
     }
@@ -184,8 +169,7 @@ impl App {
                     self.input.reset();
                     if self.player.name == "" {
                         self.events.send(AppEvent::ChangePlayerName(msg));
-                        self.events
-                            .send(AppEvent::ChangeInputMode(InputMode::Normal));
+                        self.input_mode = InputMode::Normal;
                     } else {
                         self.messages.push(msg.clone());
                         self.events.send(AppEvent::SendChat(msg));
@@ -201,7 +185,9 @@ impl App {
             }
             return Ok(());
         }
-        if matches!(self.anim, Anim::BITING) && matches!(key_event.code, KeyCode::Char('f')) {
+        if (self.player.fishing_state == FishingState::Biting)
+            && (key_event.code == KeyCode::Char('f'))
+        {
             self.events.send(AppEvent::FishCatching);
         }
         match key_event.code {
@@ -253,11 +239,15 @@ impl App {
     /// The tick event is where you can update the state of your application with any logic that
     /// needs to be updated at a fixed frame rate. E.g. polling a server, updating an animation.
     pub fn tick(&mut self) {
-        if matches!(self.anim, Anim::DEFAULT) {
-            if self.player.ticks_until_next_bite == 0 {
-                self.events.send(AppEvent::FishBiting);
-            }
-        }
+        self.player.tick();
+
+        // Update animation based on the player's state
+        self.anim = match self.player.fishing_state {
+            FishingState::Idle => Anim::DEFAULT,
+            FishingState::Biting => Anim::BITING,
+            FishingState::Catching => Anim::CATCHING,
+            FishingState::Caught => Anim::CAUGHT,
+        };
     }
 
     /// Set running to false to quit the application.

@@ -83,7 +83,7 @@ impl Item for Fish {
         format!("{}g | {}cm - {:?}", self.weight, self.length, self.quality)
     }
 
-    fn icon(&self) -> Span {
+    fn icon(&self) -> Span<'_> {
         self.species.icon()
     }
 }
@@ -141,8 +141,8 @@ pub struct Species {
 }
 
 impl Species {
-    pub fn icon(&self) -> Span {
-        Span::styled(&self.icon, Style::default().fg(self.colour))
+    pub fn icon(&self) -> Span<'_> {
+        Span::styled(self.icon.clone(), Style::default().fg(self.colour))
     }
 }
 

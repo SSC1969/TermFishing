@@ -61,19 +61,13 @@ use ratatui::{
     style::{Color, Style},
     symbols::merge::MergeStrategy,
     text::Line,
-    widgets::{
-        Block, BorderType, List, ListItem, ListState, Padding, Paragraph, StatefulWidget, Widget,
-    },
+    widgets::{Block, BorderType, List, ListItem, Padding, Paragraph, StatefulWidget, Widget},
 };
 
 use crate::{
     app::{Anim, App, InputMode, MENU_SIZE, Menu},
     items::Item,
 };
-struct ItemList {
-    items: Vec<Box<dyn Item>>,
-    state: ListState,
-}
 
 impl Widget for &mut App {
     /// Renders the user interface widgets.
@@ -103,28 +97,40 @@ impl Widget for &mut App {
         self.render_viewport(viewport, buf);
         self.render_menu(menu, buf);
         self.render_toolbar(toolbar, buf);
-        self.render_messages(messages, buf);
-        self.render_input(input, buf);
 
+        // Render the name prompt if the player has no name; otherwise, render the chat
         if self.player.name == "" {
-            self.show_name_prompt(area, buf)
-        };
+            self.show_name_prompt(area, buf);
+        } else {
+            self.render_messages(messages, buf);
+            self.render_input(input, buf);
+        }
     }
 }
 
 impl App {
     fn show_name_prompt(&mut self, area: Rect, buf: &mut Buffer) {
+        let width = area.width.max(3) - 3;
+        let scroll = self.input.visual_scroll(width as usize);
+
         let popup_area = Rect {
             x: area.width / 4,
             y: area.height / 3,
             width: area.width / 2,
-            height: area.height / 3,
+            height: 3,
         };
         let block = Block::bordered()
             .title("What's your name?")
             .border_type(BorderType::Rounded);
 
-        let input = Paragraph::new(self.input.value()).block(block);
+        Paragraph::new(self.input.value())
+            .block(block)
+            .style(Color::Yellow)
+            .scroll((0, scroll as u16))
+            .render(popup_area, buf);
+
+        let x = self.input.visual_cursor().max(scroll) - scroll + 1;
+        self.cursor_position = Some((area.x + x as u16, area.y + 1));
     }
 
     // move to bottom of impl
@@ -157,37 +163,39 @@ impl App {
 
     fn render_viewport(&self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
-            .title("Fishin'")
+            .title(format!(
+                "Fishin' [{:?}, {} to bite, {} in bite, {} in anim]",
+                self.player.fishing_state,
+                self.player.ticks_until_next_bite,
+                self.player.ticks_left_in_current_bite,
+                self.player.catch_anim_timer
+            ))
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded)
             .merge_borders(MergeStrategy::Exact);
 
-        let mut frame = DEFAULT_FRAME;
-        let mut icon = Option::None;
         let mut x = 0;
         let mut y = 0;
-        match self.anim {
-            Anim::DEFAULT => frame = DEFAULT_FRAME,
-            Anim::BITING => frame = BITE_FRAME,
+        let frame = match self.anim {
+            Anim::DEFAULT => DEFAULT_FRAME,
+            Anim::BITING => BITE_FRAME,
             Anim::CATCHING => {
-                frame = CATCH_FRAME;
-                icon = self.recent_catch.clone();
                 x = area.x + 63;
                 y = area.y + 9;
+                CATCH_FRAME
             }
             Anim::CAUGHT => {
-                frame = CAUGHT_FRAME;
-                icon = self.recent_catch.clone();
                 x = area.x + 31;
                 y = area.y + 7;
+                CAUGHT_FRAME
             }
         };
 
         Paragraph::new(frame).block(block).render(area, buf);
 
-        if icon.is_some() {
-            let span = icon.unwrap();
-            buf.set_span(x, y, &span, span.width() as u16);
+        if let Some(fish) = &self.recent_catch {
+            let icon = fish.icon();
+            buf.set_span(x, y, &icon, icon.width() as u16);
         }
     }
 
