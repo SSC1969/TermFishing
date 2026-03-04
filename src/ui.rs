@@ -119,6 +119,7 @@ impl App {
             width: area.width / 2,
             height: 3,
         };
+        Clear.render(popup_area, buf);
         let block = Block::bordered()
             .title("What's your name?")
             .border_type(BorderType::Rounded);
