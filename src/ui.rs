@@ -61,7 +61,9 @@ use ratatui::{
     style::{Color, Style},
     symbols::merge::MergeStrategy,
     text::Line,
-    widgets::{Block, BorderType, List, ListItem, Padding, Paragraph, StatefulWidget, Widget},
+    widgets::{
+        Block, BorderType, Clear, List, ListItem, Padding, Paragraph, StatefulWidget, Widget,
+    },
 };
 
 use crate::{
