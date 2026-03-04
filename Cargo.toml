@@ -2,6 +2,8 @@
 name = "TermFishing"
 version = "0.9.0"
 edition = "2024"
+description = "A small TUI-based fishing game."
+license = "GPL-3.0-or-later"
 
 [dependencies]
 color-eyre = "0.6.5"
