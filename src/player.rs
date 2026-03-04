@@ -1,23 +1,101 @@
-use ratatui::text::Span;
+use rand::RngExt;
 
 use crate::inventory::Inventory;
 use crate::inventory::{backpack::Backpack, dex::Dex};
-use crate::items::Item;
+use crate::items::ItemTypes;
 use crate::items::fish::Fish;
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum FishingState {
+    #[default]
+    Idle,
+    Biting,
+    Catching,
+    Caught,
+}
 
 #[derive(Default)]
 pub struct Player {
+    pub name: String,
     pub backpack: Backpack,
     pub dex: Dex,
+
+    // fish catching variables
+    pub fishing_state: FishingState,
+    pub ticks_until_next_bite: u32,
+
+    pub ticks_left_in_current_bite: u32,
+    pub catch_anim_timer: u32,
 }
 
 impl Player {
-    pub fn catch_fish(&mut self) -> Span<'static> {
+    pub fn catch_fish(&mut self) -> Fish {
         let fish = Fish::generate();
-        self.backpack.add_item(Box::new(fish.clone()));
-        self.dex.add_item(Box::new(fish.clone()));
-        let icon = fish.icon();
-        return icon;
+
+        self.backpack.add_item(ItemTypes::Fish(fish.clone()));
+        self.dex.add_item(ItemTypes::Fish(fish.clone()));
+
+        // 60 tick (2 seconds) timer for the animation to play
+        self.fishing_state = FishingState::Catching;
+        self.catch_anim_timer = 60;
+
+        fish
+    }
+
+    // called after the animation timer for the catch has ended to play the second animation
+    pub fn post_catch(&mut self) {
+        self.fishing_state = FishingState::Caught;
+        self.catch_anim_timer = 60;
+    }
+
+    /// Updates any relevant counters the player struct uses
+    pub fn tick(&mut self) {
+        match self.fishing_state {
+            FishingState::Idle => {
+                if self.ticks_until_next_bite <= 0 {
+                    self.bite();
+                } else {
+                    self.ticks_until_next_bite -= 1;
+                }
+            }
+            FishingState::Biting => {
+                // fail fishing if the player missed the time window
+                if self.ticks_left_in_current_bite <= 0 {
+                    self.cast_rod();
+                } else {
+                    self.ticks_left_in_current_bite -= 1;
+                }
+            }
+            FishingState::Catching => {
+                if self.catch_anim_timer <= 0 {
+                    self.post_catch();
+                } else {
+                    self.catch_anim_timer -= 1;
+                }
+            }
+            FishingState::Caught => {
+                if self.catch_anim_timer <= 0 {
+                    // cast the rod again after completing the animation
+                    self.cast_rod();
+                } else {
+                    self.catch_anim_timer -= 1;
+                }
+            }
+        }
+    }
+
+    /// Called to 'cast' the player's fishing rod
+    pub fn cast_rod(&mut self) {
+        let mut rng = rand::rng();
+        self.fishing_state = FishingState::Idle;
+        self.ticks_until_next_bite = rng.random_range(..300);
+    }
+
+    /// Called to update the player to have a fish biting
+    pub fn bite(&mut self) {
+        let mut rng = rand::rng();
+        self.fishing_state = FishingState::Biting;
+        self.ticks_left_in_current_bite = rng.random_range(60..240);
     }
 }
 

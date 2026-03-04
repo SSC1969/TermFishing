@@ -50,13 +50,13 @@ pub enum AppEvent {
     /// Change menus
     ChangeMenu(Menu),
 
-    ResetFishing,
+    CastRod,
     FishBiting,
     FishCatching,
     FishCaught,
 
+    ChangePlayerName(String),
     ChangeInputMode(InputMode),
-
     SendChat(String),
 
     MessageReceived(String),
