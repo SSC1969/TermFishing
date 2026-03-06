@@ -4,13 +4,15 @@ use ratatui::{
     widgets::ListItem,
 };
 
-use crate::items::fish::Fish;
+use crate::items::{fish::Fish, rod::Rod};
 
 pub mod fish;
+pub mod rod;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq)]
 pub enum ItemTypes {
     Fish(Fish),
+    Rod(Rod),
 }
 
 pub trait Item {
@@ -36,21 +38,25 @@ impl Item for ItemTypes {
     fn name(&self) -> String {
         match self {
             ItemTypes::Fish(fish) => fish.name(),
+            ItemTypes::Rod(rod) => rod.name(),
         }
     }
     fn icon(&self) -> Span<'_> {
         match self {
             ItemTypes::Fish(fish) => fish.icon(),
+            ItemTypes::Rod(rod) => rod.icon(),
         }
     }
     fn info(&self) -> String {
         match self {
             ItemTypes::Fish(fish) => fish.info(),
+            ItemTypes::Rod(rod) => rod.info(),
         }
     }
     fn value(&self) -> i32 {
         match self {
             ItemTypes::Fish(fish) => fish.value(),
+            ItemTypes::Rod(rod) => rod.value(),
         }
     }
 }

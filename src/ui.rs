@@ -68,6 +68,7 @@ use ratatui::{
 
 use crate::{
     app::{Anim, App, InputMode, MENU_SIZE, Menu},
+    inventory::dex::DexEntry,
     items::Item,
 };
 
@@ -254,7 +255,7 @@ impl App {
                     .dex
                     .get_all()
                     .into_iter()
-                    .map(|entry| ListItem::from(entry));
+                    .map(|entry| ListItem::from(entry.get_lines()));
                 let list = List::new(list_items)
                     .highlight_style(Style::new().reversed())
                     .block(block);

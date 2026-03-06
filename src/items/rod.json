@@ -1,0 +1,9 @@
+[
+    {
+        "name": "Average Rod",
+        "value": 50,
+        "color": "Red",
+        "lure_mult": 1,
+        "hook_strength": 1
+    }
+]
