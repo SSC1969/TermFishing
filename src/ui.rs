@@ -198,8 +198,8 @@ impl App {
         Paragraph::new(frame).block(block).render(area, buf);
 
         if let Some(fish) = &self.recent_catch {
-            let icon = fish.icon();
-            buf.set_span(x, y, &icon, icon.width() as u16);
+            let icon = Line::from(fish.icon());
+            buf.set_line(x, y, &icon, icon.width() as u16);
         }
     }
 

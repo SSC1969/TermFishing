@@ -158,9 +158,9 @@ impl DexEntry for Rod {
 
     fn get_lines(&self) -> Text<'_> {
         Text::from({
-            let l1 = Line::from(vec![self.icon(), " ".into(), self.name().into()])
-                .bold()
-                .underlined();
+            let mut vec = self.icon();
+            vec.extend([" ".into(), self.name().into()]);
+            let l1 = Line::from(vec).bold().underlined();
 
             let l2 = Line::from(format!(
                 "Lure: {} | Hook: {}",

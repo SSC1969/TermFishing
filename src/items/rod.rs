@@ -8,7 +8,8 @@ use serde::Deserialize;
 
 use crate::items::Item;
 
-static ROD_ICON: &str = "(`\\";
+static ROD_ICON: &str = "(";
+static ROD_STRING: &str = "`\\";
 
 pub static RODS: LazyLock<Vec<Rod>> = LazyLock::new(|| {
     serde_json::from_str(include_str!("rod.json")).expect("Error deserializing rods!")
@@ -39,7 +40,10 @@ impl Item for Rod {
         "Lure: {self.lure_mult} | Hook: {self.hook_strength}".to_string()
     }
 
-    fn icon(&self) -> Span<'_> {
-        Span::styled(ROD_ICON, Style::new().fg(self.color))
+    fn icon(&self) -> Vec<Span<'_>> {
+        vec![
+            Span::styled(ROD_ICON, Style::new().fg(self.color)),
+            ROD_STRING.into(),
+        ]
     }
 }
