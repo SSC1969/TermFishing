@@ -1,8 +1,8 @@
 use std::sync::LazyLock;
 
 use ratatui::{
-    style::{Color, Style},
-    text::Span,
+    style::{Color, Style, Stylize},
+    text::{Line, Span, Text},
 };
 use serde::Deserialize;
 
@@ -15,7 +15,7 @@ pub static RODS: LazyLock<Vec<Rod>> = LazyLock::new(|| {
     serde_json::from_str(include_str!("rod.json")).expect("Error deserializing rods!")
 });
 
-#[derive(Clone, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Rod {
     pub name: String,
     pub value: i32,
@@ -37,7 +37,7 @@ impl Item for Rod {
     }
 
     fn info(&self) -> String {
-        "Lure: {self.lure_mult} | Hook: {self.hook_strength}".to_string()
+        format!("Lure: {} | Hook: {}", self.lure_mult, self.hook_strength)
     }
 
     fn icon(&self) -> Vec<Span<'_>> {
@@ -45,5 +45,25 @@ impl Item for Rod {
             Span::styled(ROD_ICON, Style::new().fg(self.color)),
             ROD_STRING.into(),
         ]
+    }
+}
+
+impl Rod {
+    pub fn equipped_lines(&self) -> Text<'_> {
+        Text::from({
+            let mut vec = self.icon();
+            vec.extend([
+                " ".into(),
+                Span::styled(self.name.clone(), Style::new().fg(self.color)),
+            ]);
+            let l1 = Line::from(vec).bold().underlined();
+
+            let l2 = Line::from(format!(
+                "Lure: {} | Hook: {}",
+                self.lure_mult, self.hook_strength
+            ));
+
+            vec![l1, l2]
+        })
     }
 }

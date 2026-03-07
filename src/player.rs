@@ -4,6 +4,7 @@ use crate::inventory::Inventory;
 use crate::inventory::{backpack::Backpack, dex::Dex};
 use crate::items::ItemTypes;
 use crate::items::fish::Fish;
+use crate::items::rod::{RODS, Rod};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum FishingState {
@@ -14,13 +15,13 @@ pub enum FishingState {
     Caught,
 }
 
-#[derive(Default)]
 pub struct Player {
     pub name: String,
     pub backpack: Backpack,
     pub dex: Dex,
 
     // fish catching variables
+    pub equipped_rod: Rod,
     pub fishing_state: FishingState,
     pub ticks_until_next_bite: u32,
 
@@ -88,14 +89,39 @@ impl Player {
     pub fn cast_rod(&mut self) {
         let mut rng = rand::rng();
         self.fishing_state = FishingState::Idle;
-        self.ticks_until_next_bite = rng.random_range(..300);
+        self.ticks_until_next_bite =
+            (rng.random_range(0.0..300.0) / self.equipped_rod.lure_mult) as u32;
     }
 
     /// Called to update the player to have a fish biting
     pub fn bite(&mut self) {
         let mut rng = rand::rng();
         self.fishing_state = FishingState::Biting;
-        self.ticks_left_in_current_bite = rng.random_range(60..240);
+        self.ticks_left_in_current_bite =
+            (rng.random_range(60.0..240.0) * self.equipped_rod.hook_strength) as u32;
+    }
+
+    pub fn equip(&mut self, rod: Rod) {
+        self.equipped_rod = rod;
+    }
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        let mut backpack = Backpack::default();
+        let rod = &RODS[0];
+        // Add any items the player should start with here
+        backpack.add_item(ItemTypes::Rod(rod.clone()));
+        Self {
+            name: "".to_string(),
+            backpack,
+            dex: Dex::default(),
+            equipped_rod: rod.clone(),
+            fishing_state: FishingState::default(),
+            ticks_until_next_bite: 0,
+            ticks_left_in_current_bite: 0,
+            catch_anim_timer: 0,
+        }
     }
 }
 

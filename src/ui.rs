@@ -69,7 +69,7 @@ use ratatui::{
 use crate::{
     app::{Anim, App, InputMode, MENU_SIZE, Menu},
     inventory::dex::DexEntry,
-    items::Item,
+    items::{Item, ItemTypes},
 };
 
 impl Widget for &mut App {
@@ -236,14 +236,15 @@ impl App {
                 .block(block)
                 .render(area, buf),
             Menu::Backpack => {
-                let list_items = self
-                    .player
-                    .backpack
-                    .items
-                    .values()
-                    .map(|set| set.iter())
-                    .flatten()
-                    .map(|item| ListItem::from(item));
+                let list_items = self.player.backpack.items.iter().map(|item| {
+                    if let ItemTypes::Rod(rod) = item
+                        && *rod == self.player.equipped_rod
+                    {
+                        ListItem::from(rod.equipped_lines())
+                    } else {
+                        ListItem::from(item)
+                    }
+                });
                 let list = List::new(list_items)
                     .highlight_style(Style::new().reversed())
                     .block(block);

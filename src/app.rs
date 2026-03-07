@@ -1,7 +1,7 @@
 use crate::{
     chat::ChatHandler,
     event::{AppEvent, Event, EventHandler, NavigationDirection},
-    items::fish::Fish,
+    items::{ItemTypes, fish::Fish},
     player::{FishingState, Player},
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -131,9 +131,7 @@ impl App {
                     NavigationDirection::Right => self.menu = self.menu.next(),
                     _ => {}
                 },
-                AppEvent::CastRod => {
-                    self.player.cast_rod();
-                }
+                AppEvent::CastRod => self.player.cast_rod(),
                 AppEvent::FishBiting => {
                     self.player.bite();
                     self.events.send(AppEvent::SendChat("biting...".to_owned()));
@@ -142,9 +140,8 @@ impl App {
                     // this updates the player state as well as getting the caught fish's icon
                     self.recent_catch = Some(self.player.catch_fish());
                 }
-                AppEvent::FishCaught => {
-                    self.player.post_catch();
-                }
+                AppEvent::FishCaught => self.player.post_catch(),
+                AppEvent::ChangeRod(rod) => self.player.equip(rod),
                 AppEvent::ChangeInputMode(im) => match im {
                     InputMode::Normal => self.input_mode = im,
                     InputMode::Editing => self.input_mode = im,
@@ -221,6 +218,18 @@ impl App {
             Menu::Backpack => match key_event.code {
                 KeyCode::Up => self.backpack_state.select_previous(),
                 KeyCode::Down => self.backpack_state.select_next(),
+                KeyCode::Enter => {
+                    if let Some(index) = self.backpack_state.selected() {
+                        match &self.player.backpack.items[index] {
+                            ItemTypes::Rod(rod) => {
+                                if self.player.equipped_rod != *rod {
+                                    self.player.equip(rod.clone());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
                 _ => {}
             },
             Menu::Dex => match key_event.code {
