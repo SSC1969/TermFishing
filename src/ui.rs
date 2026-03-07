@@ -68,7 +68,8 @@ use ratatui::{
 
 use crate::{
     app::{Anim, App, InputMode, MENU_SIZE, Menu},
-    items::Item,
+    inventory::dex::DexEntry,
+    items::{Item, ItemTypes},
 };
 
 impl Widget for &mut App {
@@ -197,8 +198,8 @@ impl App {
         Paragraph::new(frame).block(block).render(area, buf);
 
         if let Some(fish) = &self.recent_catch {
-            let icon = fish.icon();
-            buf.set_span(x, y, &icon, icon.width() as u16);
+            let icon = Line::from(fish.icon());
+            buf.set_line(x, y, &icon, icon.width() as u16);
         }
     }
 
@@ -235,14 +236,15 @@ impl App {
                 .block(block)
                 .render(area, buf),
             Menu::Backpack => {
-                let list_items = self
-                    .player
-                    .backpack
-                    .items
-                    .values()
-                    .map(|set| set.iter())
-                    .flatten()
-                    .map(|item| ListItem::from(item));
+                let list_items = self.player.backpack.items.iter().map(|item| {
+                    if let ItemTypes::Rod(rod) = item
+                        && *rod == self.player.equipped_rod
+                    {
+                        ListItem::from(rod.equipped_lines())
+                    } else {
+                        ListItem::from(item)
+                    }
+                });
                 let list = List::new(list_items)
                     .highlight_style(Style::new().reversed())
                     .block(block);
@@ -254,7 +256,7 @@ impl App {
                     .dex
                     .get_all()
                     .into_iter()
-                    .map(|entry| ListItem::from(entry));
+                    .map(|entry| ListItem::from(entry.get_lines()));
                 let list = List::new(list_items)
                     .highlight_style(Style::new().reversed())
                     .block(block);
